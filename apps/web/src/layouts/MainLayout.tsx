@@ -2,6 +2,7 @@ import { Box, Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText
 import { Dashboard, Assignment, Search, History, Pets } from '@mui/icons-material';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 
+
 const drawerWidth = 280;
 
 export function MainLayout() {
@@ -43,13 +44,11 @@ export function MainLayout() {
             </ListItemButton>
           </ListItem>
 
-          <ListItem disablePadding>
-            <ListItemButton onClick={() => navigate('/pending')} selected={isActive('/pending')}>
-              <ListItemIcon><Assignment color={isActive('/pending') ? 'primary' : 'inherit'} /></ListItemIcon>
-              <ListItemText primary="Mesa de Avaliação" />
-            </ListItemButton>
-          </ListItem>
-
+          <ListItemButton onClick={() => navigate('/avaliacoes')} selected={isActive('/avaliacoes')}>
+            <ListItemIcon><Assignment color={isActive('/avaliacoes') ? 'primary' : 'inherit'} /></ListItemIcon>
+            <ListItemText primary="Mesa de Avaliação" />
+          </ListItemButton>
+          
           <ListItem disablePadding>
             <ListItemButton onClick={() => navigate('/search')} selected={isActive('/search')}>
               <ListItemIcon><Search color={isActive('/search') ? 'primary' : 'inherit'} /></ListItemIcon>
