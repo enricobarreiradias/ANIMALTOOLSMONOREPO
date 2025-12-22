@@ -2,6 +2,244 @@
 /******/ 	"use strict";
 /******/ 	var __webpack_modules__ = ({
 
+/***/ "./apps/admin/src/animal/animal.controller.ts":
+/*!****************************************************!*\
+  !*** ./apps/admin/src/animal/animal.controller.ts ***!
+  \****************************************************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.AnimalController = void 0;
+const openapi = __webpack_require__(/*! @nestjs/swagger */ "@nestjs/swagger");
+const common_1 = __webpack_require__(/*! @nestjs/common */ "@nestjs/common");
+const animal_service_1 = __webpack_require__(/*! ./animal.service */ "./apps/admin/src/animal/animal.service.ts");
+const create_animal_dto_1 = __webpack_require__(/*! ./dto/create-animal.dto */ "./apps/admin/src/animal/dto/create-animal.dto.ts");
+const update_animal_dto_1 = __webpack_require__(/*! ./dto/update-animal.dto */ "./apps/admin/src/animal/dto/update-animal.dto.ts");
+let AnimalController = class AnimalController {
+    animalService;
+    constructor(animalService) {
+        this.animalService = animalService;
+    }
+    create(createAnimalDto) {
+        return this.animalService.create(createAnimalDto);
+    }
+    findAll() {
+        return this.animalService.findAll();
+    }
+    findOne(id) {
+        return this.animalService.findOne(+id);
+    }
+    update(id, updateAnimalDto) {
+        return this.animalService.update(+id, updateAnimalDto);
+    }
+    remove(id) {
+        return this.animalService.remove(+id);
+    }
+};
+exports.AnimalController = AnimalController;
+__decorate([
+    (0, common_1.Post)(),
+    openapi.ApiResponse({ status: 201, type: String }),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [create_animal_dto_1.CreateAnimalDto]),
+    __metadata("design:returntype", void 0)
+], AnimalController.prototype, "create", null);
+__decorate([
+    (0, common_1.Get)(),
+    openapi.ApiResponse({ status: 200, type: String }),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", void 0)
+], AnimalController.prototype, "findAll", null);
+__decorate([
+    (0, common_1.Get)(':id'),
+    openapi.ApiResponse({ status: 200, type: String }),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], AnimalController.prototype, "findOne", null);
+__decorate([
+    (0, common_1.Patch)(':id'),
+    openapi.ApiResponse({ status: 200, type: String }),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, update_animal_dto_1.UpdateAnimalDto]),
+    __metadata("design:returntype", void 0)
+], AnimalController.prototype, "update", null);
+__decorate([
+    (0, common_1.Delete)(':id'),
+    openapi.ApiResponse({ status: 200, type: String }),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], AnimalController.prototype, "remove", null);
+exports.AnimalController = AnimalController = __decorate([
+    (0, common_1.Controller)('animal'),
+    __metadata("design:paramtypes", [animal_service_1.AnimalService])
+], AnimalController);
+
+
+/***/ }),
+
+/***/ "./apps/admin/src/animal/animal.module.ts":
+/*!************************************************!*\
+  !*** ./apps/admin/src/animal/animal.module.ts ***!
+  \************************************************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.AnimalModule = void 0;
+const common_1 = __webpack_require__(/*! @nestjs/common */ "@nestjs/common");
+const animal_service_1 = __webpack_require__(/*! ./animal.service */ "./apps/admin/src/animal/animal.service.ts");
+const animal_controller_1 = __webpack_require__(/*! ./animal.controller */ "./apps/admin/src/animal/animal.controller.ts");
+let AnimalModule = class AnimalModule {
+};
+exports.AnimalModule = AnimalModule;
+exports.AnimalModule = AnimalModule = __decorate([
+    (0, common_1.Module)({
+        controllers: [animal_controller_1.AnimalController],
+        providers: [animal_service_1.AnimalService],
+    })
+], AnimalModule);
+
+
+/***/ }),
+
+/***/ "./apps/admin/src/animal/animal.service.ts":
+/*!*************************************************!*\
+  !*** ./apps/admin/src/animal/animal.service.ts ***!
+  \*************************************************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.AnimalService = void 0;
+const common_1 = __webpack_require__(/*! @nestjs/common */ "@nestjs/common");
+let AnimalService = class AnimalService {
+    create(createAnimalDto) {
+        return 'This action adds a new animal';
+    }
+    findAll() {
+        return `This action returns all animal`;
+    }
+    findOne(id) {
+        return `This action returns a #${id} animal`;
+    }
+    update(id, updateAnimalDto) {
+        return `This action updates a #${id} animal`;
+    }
+    remove(id) {
+        return `This action removes a #${id} animal`;
+    }
+};
+exports.AnimalService = AnimalService;
+exports.AnimalService = AnimalService = __decorate([
+    (0, common_1.Injectable)()
+], AnimalService);
+
+
+/***/ }),
+
+/***/ "./apps/admin/src/animal/dto/create-animal.dto.ts":
+/*!********************************************************!*\
+  !*** ./apps/admin/src/animal/dto/create-animal.dto.ts ***!
+  \********************************************************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.CreateAnimalDto = void 0;
+const openapi = __webpack_require__(/*! @nestjs/swagger */ "@nestjs/swagger");
+const class_validator_1 = __webpack_require__(/*! class-validator */ "class-validator");
+class CreateAnimalDto {
+    tagCode;
+    breed;
+    animalIdentifier;
+    static _OPENAPI_METADATA_FACTORY() {
+        return { tagCode: { required: true, type: () => String }, breed: { required: true, type: () => String }, animalIdentifier: { required: false, type: () => String } };
+    }
+}
+exports.CreateAnimalDto = CreateAnimalDto;
+__decorate([
+    (0, class_validator_1.IsNotEmpty)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], CreateAnimalDto.prototype, "tagCode", void 0);
+__decorate([
+    (0, class_validator_1.IsNotEmpty)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], CreateAnimalDto.prototype, "breed", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], CreateAnimalDto.prototype, "animalIdentifier", void 0);
+
+
+/***/ }),
+
+/***/ "./apps/admin/src/animal/dto/update-animal.dto.ts":
+/*!********************************************************!*\
+  !*** ./apps/admin/src/animal/dto/update-animal.dto.ts ***!
+  \********************************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.UpdateAnimalDto = void 0;
+const openapi = __webpack_require__(/*! @nestjs/swagger */ "@nestjs/swagger");
+const swagger_1 = __webpack_require__(/*! @nestjs/swagger */ "@nestjs/swagger");
+const create_animal_dto_1 = __webpack_require__(/*! ./create-animal.dto */ "./apps/admin/src/animal/dto/create-animal.dto.ts");
+class UpdateAnimalDto extends (0, swagger_1.PartialType)(create_animal_dto_1.CreateAnimalDto) {
+    static _OPENAPI_METADATA_FACTORY() {
+        return {};
+    }
+}
+exports.UpdateAnimalDto = UpdateAnimalDto;
+
+
+/***/ }),
+
 /***/ "./apps/admin/src/app.module.ts":
 /*!**************************************!*\
   !*** ./apps/admin/src/app.module.ts ***!
@@ -23,6 +261,7 @@ const serve_static_1 = __webpack_require__(/*! @nestjs/serve-static */ "@nestjs/
 const config_1 = __webpack_require__(/*! @nestjs/config */ "@nestjs/config");
 const path_1 = __webpack_require__(/*! path */ "path");
 const evaluation_module_1 = __webpack_require__(/*! ./evaluation/evaluation.module */ "./apps/admin/src/evaluation/evaluation.module.ts");
+const animal_module_1 = __webpack_require__(/*! ./animal/animal.module */ "./apps/admin/src/animal/animal.module.ts");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -48,6 +287,7 @@ exports.AppModule = AppModule = __decorate([
                 autoLoadEntities: true,
             }),
             evaluation_module_1.EvaluationModule,
+            animal_module_1.AnimalModule,
         ],
     })
 ], AppModule);
