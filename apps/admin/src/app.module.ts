@@ -4,6 +4,7 @@ import { ServeStaticModule } from '@nestjs/serve-static';
 import { ConfigModule } from '@nestjs/config'; 
 import { join } from 'path';
 import { EvaluationModule } from './evaluation/evaluation.module';
+import { AnimalModule } from './animal/animal.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { EvaluationModule } from './evaluation/evaluation.module';
       autoLoadEntities: true,
     }),
     EvaluationModule,
+    AnimalModule,
   ],
 })
 export class AppModule {}
