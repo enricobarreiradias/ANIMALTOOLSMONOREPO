@@ -9,31 +9,34 @@ import {
   TableHead, 
   TableRow, 
   Box, 
-  Button 
+  Button,
+  Chip
 } from '@mui/material';
 import { Add } from '@mui/icons-material';
 import { api } from '../services/api';
 import { EvaluationModal } from '../components/EvaluationModal';
 
-// 1. Define o "formato" dos dados para evitar erro de 'any'
-interface Evaluation {
-  id: number;
-  animalId: number; // ou o objeto animal completo, dependendo do backend
-  createdAt: string;
-  status?: string;
+// Interface espelhando o retorno do endpoint 'findAllHistory' do Backend
+interface EvaluationData {
+  id: string; // ID do Animal
+  code: string;
+  breed: string;
+  lastEvaluationDate: string | null;
+  media: string[];
 }
 
 export default function EvaluationTable() {
-  // 2. Tipamos o estado para parar de reclamar
-  const [evaluations, setEvaluations] = useState<Evaluation[]>([]);
+  const [evaluations, setEvaluations] = useState<EvaluationData[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const fetchData = () => {
-    api.get('/evaluation')
-      .then((res) => { // O axios geralmente infere, mas se der erro use (res: any) temporariamente
-        setEvaluations(res.data);
+    // ROTA CORRIGIDA: O backend expõe o histórico em 'evaluations/history'
+    api.get('/evaluations/history')
+      .then((res) => {
+        // ESTRUTURA CORRIGIDA: O backend retorna { data: [...], meta: ... }
+        setEvaluations(res.data.data); 
       })
-      .catch((error) => console.error('Erro ao buscar avaliações:', error));
+      .catch((error) => console.error('Erro ao carregar histórico:', error));
   };
 
   useEffect(() => {
@@ -42,41 +45,56 @@ export default function EvaluationTable() {
 
   return (
     <div>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-        {/* 3. Typography agora está importado */}
-        <Typography variant="h4">Mesa de Avaliação</Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
+        <Typography variant="h4" fontWeight="bold" color="primary">
+          Mesa de Avaliação
+        </Typography>
         <Button 
           variant="contained" 
           startIcon={<Add />} 
           onClick={() => setIsModalOpen(true)}
+          sx={{ fontWeight: 'bold' }}
         >
           Nova Avaliação
         </Button>
       </Box>
       
-      <TableContainer component={Paper}>
+      <TableContainer component={Paper} elevation={3}>
         <Table>
-          <TableHead>
+          <TableHead sx={{ backgroundColor: '#f5f5f5' }}>
             <TableRow>
-              <TableCell>ID</TableCell>
-              <TableCell>Animal (ID)</TableCell>
-              <TableCell>Data</TableCell>
-              <TableCell>Status</TableCell>
+              <TableCell><strong>Brinco (Tag)</strong></TableCell>
+              <TableCell><strong>Raça</strong></TableCell>
+              <TableCell><strong>Última Avaliação</strong></TableCell>
+              <TableCell><strong>Status</strong></TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {evaluations.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={4} align="center">Nenhuma avaliação encontrada</TableCell>
+                <TableCell colSpan={4} align="center" sx={{ py: 3 }}>
+                  <Typography variant="body1" color="textSecondary">
+                    Nenhum histórico encontrado.
+                  </Typography>
+                </TableCell>
               </TableRow>
             ) : (
-              // 4. Usamos a variável 'evaluations', resolvendo o erro "assigned but never used"
               evaluations.map((row) => (
-                <TableRow key={row.id}>
-                  <TableCell>{row.id}</TableCell>
-                  <TableCell>{row.animalId}</TableCell>
-                  <TableCell>{new Date(row.createdAt).toLocaleDateString()}</TableCell>
-                  <TableCell>Pendente</TableCell>
+                <TableRow key={row.id} hover>
+                  <TableCell>{row.code}</TableCell>
+                  <TableCell>{row.breed}</TableCell>
+                  <TableCell>
+                    {row.lastEvaluationDate 
+                      ? new Date(row.lastEvaluationDate).toLocaleDateString('pt-BR') 
+                      : 'Nunca avaliado'}
+                  </TableCell>
+                  <TableCell>
+                    <Chip 
+                      label={row.lastEvaluationDate ? "Avaliado" : "Pendente"} 
+                      color={row.lastEvaluationDate ? "success" : "warning"} 
+                      size="small" 
+                    />
+                  </TableCell>
                 </TableRow>
               ))
             )}
