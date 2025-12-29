@@ -52,7 +52,7 @@ let AnimalController = class AnimalController {
 exports.AnimalController = AnimalController;
 __decorate([
     (0, common_1.Post)(),
-    openapi.ApiResponse({ status: 201, type: String }),
+    openapi.ApiResponse({ status: 201, type: (__webpack_require__(/*! ./libs/data/src/entities/animal.entity */ "./libs/data/src/entities/animal.entity.ts").Animal) }),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [create_animal_dto_1.CreateAnimalDto]),
@@ -60,14 +60,14 @@ __decorate([
 ], AnimalController.prototype, "create", null);
 __decorate([
     (0, common_1.Get)(),
-    openapi.ApiResponse({ status: 200, type: String }),
+    openapi.ApiResponse({ status: 200, type: [(__webpack_require__(/*! ./libs/data/src/entities/animal.entity */ "./libs/data/src/entities/animal.entity.ts").Animal)] }),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", void 0)
 ], AnimalController.prototype, "findAll", null);
 __decorate([
     (0, common_1.Get)(':id'),
-    openapi.ApiResponse({ status: 200, type: String }),
+    openapi.ApiResponse({ status: 200, type: Object }),
     __param(0, (0, common_1.Param)('id')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
@@ -75,7 +75,7 @@ __decorate([
 ], AnimalController.prototype, "findOne", null);
 __decorate([
     (0, common_1.Patch)(':id'),
-    openapi.ApiResponse({ status: 200, type: String }),
+    openapi.ApiResponse({ status: 200, type: Object }),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
@@ -84,7 +84,7 @@ __decorate([
 ], AnimalController.prototype, "update", null);
 __decorate([
     (0, common_1.Delete)(':id'),
-    openapi.ApiResponse({ status: 200, type: String }),
+    openapi.ApiResponse({ status: 200 }),
     __param(0, (0, common_1.Param)('id')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
@@ -734,13 +734,11 @@ exports.EvaluationService = void 0;
 const common_1 = __webpack_require__(/*! @nestjs/common */ "@nestjs/common");
 const typeorm_1 = __webpack_require__(/*! @nestjs/typeorm */ "@nestjs/typeorm");
 const typeorm_2 = __webpack_require__(/*! typeorm */ "typeorm");
-const dental_evaluation_entity_1 = __webpack_require__(/*! @lib/data/entities/dental-evaluation.entity */ "./libs/data/src/entities/dental-evaluation.entity.ts");
-const animal_entity_1 = __webpack_require__(/*! @lib/data/entities/animal.entity */ "./libs/data/src/entities/animal.entity.ts");
-const user_entity_1 = __webpack_require__(/*! @lib/data/entities/user.entity */ "./libs/data/src/entities/user.entity.ts");
-const media_entity_1 = __webpack_require__(/*! @lib/data/entities/media.entity */ "./libs/data/src/entities/media.entity.ts");
-const dental_evaluation_enums_1 = __webpack_require__(/*! @lib/data/enums/dental-evaluation.enums */ "./libs/data/src/enums/dental-evaluation.enums.ts");
-const dental_evaluation_enums_2 = __webpack_require__(/*! @lib/data/enums/dental-evaluation.enums */ "./libs/data/src/enums/dental-evaluation.enums.ts");
-const typeorm_3 = __webpack_require__(/*! typeorm */ "typeorm");
+const dental_evaluation_entity_1 = __webpack_require__(/*! ../../../../libs/data/src/entities/dental-evaluation.entity */ "./libs/data/src/entities/dental-evaluation.entity.ts");
+const animal_entity_1 = __webpack_require__(/*! ../../../../libs/data/src/entities/animal.entity */ "./libs/data/src/entities/animal.entity.ts");
+const user_entity_1 = __webpack_require__(/*! ../../../../libs/data/src/entities/user.entity */ "./libs/data/src/entities/user.entity.ts");
+const media_entity_1 = __webpack_require__(/*! ../../../../libs/data/src/entities/media.entity */ "./libs/data/src/entities/media.entity.ts");
+const dental_evaluation_enums_1 = __webpack_require__(/*! ../../../../libs/data/src/enums/dental-evaluation.enums */ "./libs/data/src/enums/dental-evaluation.enums.ts");
 let EvaluationService = class EvaluationService {
     evaluationRepository;
     animalRepository;
@@ -762,11 +760,14 @@ let EvaluationService = class EvaluationService {
         if (!animal) {
             throw new common_1.NotFoundException(`Animal não encontrado.`);
         }
-        const evaluator = await this.userRepository.findOne({
+        let evaluator = await this.userRepository.findOne({
             where: { id: createDto.evaluatorId }
         });
         if (!evaluator) {
-            throw new common_1.NotFoundException(`Avaliador não encontrado. Rode o /seed primeiro.`);
+            evaluator = await this.userRepository.findOne({ order: { registrationDate: 'ASC' } });
+        }
+        if (!evaluator) {
+            throw new common_1.NotFoundException(`Nenhum avaliador encontrado no sistema. Rode o seed ou crie um usuário.`);
         }
         const { animalId, evaluatorId, ...clinicalData } = createDto;
         const evaluation = this.evaluationRepository.create({
@@ -781,19 +782,19 @@ let EvaluationService = class EvaluationService {
             relations: ['dentalEvaluations', 'mediaFiles'],
         });
         return animals
-            .filter(a => a.dentalEvaluations.length === 0 && a.mediaFiles.length > 0)
+            .filter(a => a.dentalEvaluations.length === 0)
             .map(a => ({
             id: a.id.toString(),
             code: a.tagCode,
             breed: a.breed,
-            media: a.mediaFiles.map(m => m.s3UrlPath)
+            media: a.mediaFiles?.map(m => m.s3UrlPath) || []
         }));
     }
     async findAllHistory(page = 1, limit = 10) {
         const [result, total] = await this.animalRepository.createQueryBuilder('animal')
             .innerJoinAndSelect('animal.dentalEvaluations', 'evaluation')
             .leftJoinAndSelect('animal.mediaFiles', 'media')
-            .orderBy('animal.id', 'DESC')
+            .orderBy('evaluation.evaluationDate', 'DESC')
             .skip((page - 1) * limit)
             .take(limit)
             .getManyAndCount();
@@ -805,11 +806,7 @@ let EvaluationService = class EvaluationService {
                 lastEvaluationDate: a.dentalEvaluations[0]?.evaluationDate,
                 media: a.mediaFiles.map(m => m.s3UrlPath)
             })),
-            meta: {
-                total,
-                page,
-                limit
-            }
+            meta: { total, page, limit }
         };
     }
     async createAnimalFromUpload(code, breed, mediaPaths) {
@@ -820,7 +817,6 @@ let EvaluationService = class EvaluationService {
             const newAnimal = this.animalRepository.create({
                 tagCode: code,
                 breed: breed,
-                generalStatus: 'PENDING'
             });
             const savedAnimal = await queryRunner.manager.save(newAnimal);
             for (const [index, path] of mediaPaths.entries()) {
@@ -843,21 +839,7 @@ let EvaluationService = class EvaluationService {
         }
     }
     async seed() {
-        const evaluatorId = "d290f1ee-6c54-4b01-90e6-d701748f0851";
-        let user = await this.userRepository.findOne({ where: { id: evaluatorId } });
-        if (!user) {
-            user = this.userRepository.create({
-                id: evaluatorId,
-                fullName: "Avaliador Padrão",
-                email: "avaliador@animaltools.com"
-            });
-            await this.userRepository.save(user);
-        }
-        const examplePhotos = [
-            "https://images.unsplash.com/photo-1546445317-29f4545e9d53?q=80&w=600",
-            "https://images.unsplash.com/photo-1570042225831-d98fa7577f1e?q=80&w=600"
-        ];
-        return await this.createAnimalFromUpload('BOI-SEED-' + Math.floor(Math.random() * 1000), 'Nelore', examplePhotos);
+        return await this.createAnimalFromUpload('BOI-TESTE-' + Math.floor(Math.random() * 1000), 'Nelore', ['https://via.placeholder.com/400', 'https://via.placeholder.com/400']);
     }
     async findOne(id) {
         const evaluation = await this.evaluationRepository.findOne({
@@ -896,9 +878,13 @@ let EvaluationService = class EvaluationService {
     async getDashboardStats() {
         const totalAnimals = await this.animalRepository.count();
         const totalEvaluations = await this.evaluationRepository.count();
-        const pending = (await this.findPendingEvaluations()).length;
+        const pendingList = await this.findPendingEvaluations();
+        const pending = pendingList.length;
         const criticalCases = await this.evaluationRepository.count({
-            where: { generalHealthStatus: dental_evaluation_enums_2.GeneralHealthStatus.CRITICAL }
+            where: [
+                { toothFracture: (0, typeorm_2.MoreThanOrEqual)(4) },
+                { pulpitis: (0, typeorm_2.MoreThanOrEqual)(4) }
+            ]
         });
         return {
             totalAnimals,
@@ -919,7 +905,7 @@ exports.EvaluationService = EvaluationService = __decorate([
         typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository,
-        typeorm_3.DataSource])
+        typeorm_2.DataSource])
 ], EvaluationService);
 
 
@@ -1324,7 +1310,7 @@ var GeneralHealthStatus;
 var PhotoType;
 (function (PhotoType) {
     PhotoType["FRONTAL"] = "FRONTAL";
-    PhotoType["SUPERIOR"] = "SUPERIOR";
+    PhotoType["VESTIBULAR"] = "VESTIBULAR";
     PhotoType["LATERAL_LEFT"] = "LATERAL_LEFT";
     PhotoType["LATERAL_RIGHT"] = "LATERAL_RIGHT";
 })(PhotoType || (exports.PhotoType = PhotoType = {}));

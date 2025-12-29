@@ -1,10 +1,9 @@
-import { Repository } from 'typeorm';
-import { DentalEvaluation } from '@lib/data/entities/dental-evaluation.entity';
-import { Animal } from '@lib/data/entities/animal.entity';
-import { User } from '@lib/data/entities/user.entity';
-import { Media } from '@lib/data/entities/media.entity';
+import { Repository, DataSource } from 'typeorm';
+import { DentalEvaluation } from '../../../../libs/data/src/entities/dental-evaluation.entity';
+import { Animal } from '../../../../libs/data/src/entities/animal.entity';
+import { User } from '../../../../libs/data/src/entities/user.entity';
+import { Media } from '../../../../libs/data/src/entities/media.entity';
 import { CreateEvaluationDto } from './dto/create-evaluation.dto';
-import { DataSource } from 'typeorm';
 export declare class EvaluationService {
     private readonly evaluationRepository;
     private readonly animalRepository;

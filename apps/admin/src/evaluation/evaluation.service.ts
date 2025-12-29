@@ -1,15 +1,12 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { DentalEvaluation } from '@lib/data/entities/dental-evaluation.entity';
-import { Animal } from '@lib/data/entities/animal.entity';
-import { User } from '@lib/data/entities/user.entity';
-import { Media } from '@lib/data/entities/media.entity'; 
-import { PhotoType } from '@lib/data/enums/dental-evaluation.enums'; 
+import { Repository, DataSource, MoreThanOrEqual } from 'typeorm';
+import { DentalEvaluation } from '../../../../libs/data/src/entities/dental-evaluation.entity';
+import { Animal } from '../../../../libs/data/src/entities/animal.entity';
+import { User } from '../../../../libs/data/src/entities/user.entity';
+import { Media } from '../../../../libs/data/src/entities/media.entity'; 
+import { PhotoType } from '../../../../libs/data/src/enums/dental-evaluation.enums'; 
 import { CreateEvaluationDto } from './dto/create-evaluation.dto';
-import { GeneralHealthStatus } from '@lib/data/enums/dental-evaluation.enums';
-import { DataSource } from 'typeorm'; 
-
 
 @Injectable()
 export class EvaluationService {
@@ -27,13 +24,13 @@ export class EvaluationService {
     private readonly mediaRepository: Repository<Media>, 
     
     private dataSource: DataSource,
-        
   ) {}
 
   // --- 1. SALVAR AVALIAÇÃO ---
   async create(createDto: CreateEvaluationDto): Promise<DentalEvaluation> {
     const animalIdNumber = Number(createDto.animalId);
 
+    // 1. Busca o Animal
     const animal = await this.animalRepository.findOne({ 
         where: { id: animalIdNumber } 
     });
@@ -42,18 +39,26 @@ export class EvaluationService {
       throw new NotFoundException(`Animal não encontrado.`);
     }
 
-    const evaluator = await this.userRepository.findOne({ 
+    // 2. Busca o Avaliador (Garantindo que não seja null)
+    let evaluator = await this.userRepository.findOne({ 
         where: { id: createDto.evaluatorId } 
     });
     
+    // Fallback: Se não achar o ID específico, pega o primeiro usuário do banco (útil em dev)
     if (!evaluator) {
-      throw new NotFoundException(`Avaliador não encontrado. Rode o /seed primeiro.`);
+      evaluator = await this.userRepository.findOne({ order: { registrationDate: 'ASC' } });
     }
 
-    
+    // Se mesmo assim não tiver usuário, para tudo.
+    if (!evaluator) {
+      throw new NotFoundException(`Nenhum avaliador encontrado no sistema. Rode o seed ou crie um usuário.`);
+    }
+
+    // 3. Separa os dados clínicos dos IDs
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { animalId, evaluatorId, ...clinicalData } = createDto;
 
+    // 4. Cria a entidade (Agora evaluator é garantido como User)
     const evaluation = this.evaluationRepository.create({
       ...clinicalData, 
       animal: animal, 
@@ -70,22 +75,21 @@ export class EvaluationService {
     });
     
     return animals
-      .filter(a => a.dentalEvaluations.length === 0 && a.mediaFiles.length > 0)
+      .filter(a => a.dentalEvaluations.length === 0) 
       .map(a => ({
         id: a.id.toString(), 
         code: a.tagCode,     
         breed: a.breed,
-        media: a.mediaFiles.map(m => m.s3UrlPath) 
+        media: a.mediaFiles?.map(m => m.s3UrlPath) || []
       }));
   }
 
   // --- 3. HISTÓRICO ---
   async findAllHistory(page: number = 1, limit: number = 10) {
-
     const [result, total] = await this.animalRepository.createQueryBuilder('animal')
       .innerJoinAndSelect('animal.dentalEvaluations', 'evaluation') 
       .leftJoinAndSelect('animal.mediaFiles', 'media') 
-      .orderBy('animal.id', 'DESC')
+      .orderBy('evaluation.evaluationDate', 'DESC')
       .skip((page - 1) * limit)
       .take(limit)
       .getManyAndCount();
@@ -98,76 +102,54 @@ export class EvaluationService {
         lastEvaluationDate: a.dentalEvaluations[0]?.evaluationDate,
         media: a.mediaFiles.map(m => m.s3UrlPath)
       })),
-      meta: {
-        total, 
-        page,
-        limit
-      }
+      meta: { total, page, limit }
     };
   }
 
-// --- 4. CRIAR ANIMAL VIA UPLOAD ---
-async createAnimalFromUpload(code: string, breed: string, mediaPaths: string[]) {
-  const queryRunner = this.dataSource.createQueryRunner();
+  // --- 4. CRIAR ANIMAL VIA UPLOAD ---
+  async createAnimalFromUpload(code: string, breed: string, mediaPaths: string[]) {
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
 
-  await queryRunner.connect();
-  await queryRunner.startTransaction();
-
-  try {
-    const newAnimal = this.animalRepository.create({
-      tagCode: code,
-      breed: breed,
-      generalStatus: 'PENDING'
-    });
-    const savedAnimal = await queryRunner.manager.save(newAnimal);
-
-    for (const [index, path] of mediaPaths.entries()) {
-      const newMedia = this.mediaRepository.create({
-        s3UrlPath: path,
-        photoType: index === 0 ? PhotoType.FRONTAL : PhotoType.VESTIBULAR,
-        animal: savedAnimal
+    try {
+      const newAnimal = this.animalRepository.create({
+        tagCode: code,
+        breed: breed,
       });
-      await queryRunner.manager.save(newMedia);
+      const savedAnimal = await queryRunner.manager.save(newAnimal);
+
+      for (const [index, path] of mediaPaths.entries()) {
+        const newMedia = this.mediaRepository.create({
+          s3UrlPath: path,
+          // Ajustado para o Enum correto (assumindo FRONTAL e SUPERIOR)
+          photoType: index === 0 ? PhotoType.FRONTAL : PhotoType.VESTIBULAR, 
+          animal: savedAnimal
+        });
+        await queryRunner.manager.save(newMedia);
+      }
+
+      await queryRunner.commitTransaction();
+      return savedAnimal;
+
+    } catch (err) {
+      await queryRunner.rollbackTransaction();
+      throw err;
+    } finally {
+      await queryRunner.release();
     }
-
-    await queryRunner.commitTransaction();
-    return savedAnimal;
-
-  } catch (err) {
-    await queryRunner.rollbackTransaction();
-    throw err;
-  } finally {
-    await queryRunner.release();
   }
-}
 
   // --- 5. SEED ---
   async seed() {
-    const evaluatorId = "d290f1ee-6c54-4b01-90e6-d701748f0851";
-    let user = await this.userRepository.findOne({ where: { id: evaluatorId } });
-    
-    if (!user) {
-      user = this.userRepository.create({
-        id: evaluatorId,
-        fullName: "Avaliador Padrão",
-        email: "avaliador@animaltools.com"
-      });
-      await this.userRepository.save(user);
-    }
-
-    const examplePhotos = [
-      "https://images.unsplash.com/photo-1546445317-29f4545e9d53?q=80&w=600",
-      "https://images.unsplash.com/photo-1570042225831-d98fa7577f1e?q=80&w=600"
-    ];
-
     return await this.createAnimalFromUpload(
-      'BOI-SEED-' + Math.floor(Math.random() * 1000),
+      'BOI-TESTE-' + Math.floor(Math.random() * 1000),
       'Nelore',
-      examplePhotos
+      ['https://via.placeholder.com/400', 'https://via.placeholder.com/400']
     );
   }
 
-  // --- 6. BUSCAR UMA AVALIAÇÃO (DETALHES) ---
+  // --- 6. BUSCAR UMA AVALIAÇÃO ---
   async findOne(id: number) {
     const evaluation = await this.evaluationRepository.findOne({
       where: { id },
@@ -198,19 +180,16 @@ async createAnimalFromUpload(code: string, breed: string, mediaPaths: string[]) 
     return await query.orderBy('evaluation.evaluationDate', 'DESC').getMany();
   }
 
-  // --- 8. ATUALIZAR AVALIAÇÃO ---
+  // --- 8. ATUALIZAR ---
   async update(id: number, updateDto: any) {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { animalId, evaluatorId, ...dataToUpdate } = updateDto;
-
     const evaluation = await this.findOne(id); 
-
     Object.assign(evaluation, dataToUpdate);
-
     return await this.evaluationRepository.save(evaluation);
   }
 
-  // --- 9. DELETAR AVALIAÇÃO ---
+  // --- 9. DELETAR ---
   async remove(id: number) {
     const evaluation = await this.findOne(id);
     return await this.evaluationRepository.remove(evaluation);
@@ -220,10 +199,17 @@ async createAnimalFromUpload(code: string, breed: string, mediaPaths: string[]) 
   async getDashboardStats() {
     const totalAnimals = await this.animalRepository.count();
     const totalEvaluations = await this.evaluationRepository.count();
-    const pending = (await this.findPendingEvaluations()).length;
+    
+    const pendingList = await this.findPendingEvaluations();
+    const pending = pendingList.length;
 
+    // CORREÇÃO: Definindo "Casos Críticos" usando a nova estrutura (0-5)
+    // Consideramos crítico se Fratura >= 4 OU Pulpite >= 4
     const criticalCases = await this.evaluationRepository.count({
-        where: { generalHealthStatus: GeneralHealthStatus.CRITICAL }
+        where: [
+            { toothFracture: MoreThanOrEqual(4) },
+            { pulpitis: MoreThanOrEqual(4) }
+        ]
     });
 
     return {
