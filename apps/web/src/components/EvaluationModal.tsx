@@ -22,15 +22,15 @@ import {
 import { useForm, Controller } from 'react-hook-form';
 import { api } from '../services/api';
 
-// --- TIPOS ---
+// --- TIPOS CORRIGIDOS (UUID) ---
 interface Animal {
-  id: number;
+  id: string;        // MUDADO DE NUMBER PARA STRING (UUID)
   tagCode: string;
   breed?: string;
 }
 
 interface ClinicalEvaluationData {
-  animalId: number;
+  animalId: string;  // MUDADO DE NUMBER PARA STRING
   isToothAbsent: boolean;
   fractureLevel: string; 
   crownReduction: boolean;
@@ -61,6 +61,7 @@ export function EvaluationModal({ open, onClose, onSuccess }: Props) {
   
   const { register, handleSubmit, control, reset } = useForm<ClinicalEvaluationData>({
     defaultValues: {
+      animalId: '', // Inicializa vazio como string
       isToothAbsent: false,
       fractureLevel: 'NONE',
       crownReduction: false,
@@ -79,13 +80,12 @@ export function EvaluationModal({ open, onClose, onSuccess }: Props) {
 
   useEffect(() => {
     if (open) {
-      // CORREÇÃO: Removemos o setErrorMsg(null) síncrono daqui.
-      // Ele será limpo automaticamente no sucesso da requisição ou ao fechar o modal.
-      
       api.get('/animal')
         .then((res) => {
-          setAnimals(res.data);
-          setErrorMsg(null); // Limpa o erro aqui, de forma segura (assíncrona)
+          // Garante que é um array, mesmo se o backend retornar paginado
+          const data = Array.isArray(res.data) ? res.data : (res.data.data || []);
+          setAnimals(data);
+          setErrorMsg(null);
         })
         .catch((err) => {
           console.error("Erro ao buscar animais:", err);
@@ -96,7 +96,7 @@ export function EvaluationModal({ open, onClose, onSuccess }: Props) {
 
   const handleClose = () => {
     reset();
-    setErrorMsg(null); // Garante que o erro sumiu para a próxima vez
+    setErrorMsg(null);
     onClose();
   };
 
@@ -133,10 +133,9 @@ export function EvaluationModal({ open, onClose, onSuccess }: Props) {
         <DialogContent>
           {errorMsg && <Alert severity="error" sx={{ mb: 2 }}>{errorMsg}</Alert>}
 
-          {/* LAYOUT UNIVERSAL (Flexbox) - Funciona em qualquer versão do MUI */}
           <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 3 }}>
             
-            {/* COLUNA DA ESQUERDA: FOTOS (40%) */}
+            {/* COLUNA DA ESQUERDA: FOTOS */}
             <Box sx={{ width: { xs: '100%', md: '40%' } }}>
               <Box sx={{ mb: 2 }}>
                 <TextField
@@ -145,6 +144,7 @@ export function EvaluationModal({ open, onClose, onSuccess }: Props) {
                   {...register('animalId', { required: true })}
                   fullWidth
                   variant="filled"
+                  defaultValue=""
                   error={animals.length === 0}
                   helperText={animals.length === 0 ? "Nenhum animal cadastrado no Seed." : ""}
                 >
@@ -172,7 +172,7 @@ export function EvaluationModal({ open, onClose, onSuccess }: Props) {
               </Stack>
             </Box>
 
-            {/* COLUNA DA DIREITA: FORMULÁRIO (60%) */}
+            {/* COLUNA DA DIREITA: FORMULÁRIO */}
             <Box sx={{ width: { xs: '100%', md: '60%' }, maxHeight: '65vh', overflowY: 'auto', pr: 1 }}>
               
               <Typography variant="h6" color="primary" gutterBottom>Critérios Dentários</Typography>
@@ -200,7 +200,7 @@ export function EvaluationModal({ open, onClose, onSuccess }: Props) {
 
                 <Divider sx={{ my: 1 }} />
                 
-                <Typography variant="subtitle2">Nível de Fratura (1-5)</Typography>
+                <Typography variant="subtitle2">Nível de Fratura (0-5)</Typography>
                 <TextField select fullWidth size="small" {...register('fractureLevel')} defaultValue="NONE">
                   <MenuItem value="NONE">Ausente (0)</MenuItem>
                   <MenuItem value="LIGHT">Leve (1)</MenuItem>

@@ -114,15 +114,19 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.AnimalModule = void 0;
 const common_1 = __webpack_require__(/*! @nestjs/common */ "@nestjs/common");
+const typeorm_1 = __webpack_require__(/*! @nestjs/typeorm */ "@nestjs/typeorm");
 const animal_service_1 = __webpack_require__(/*! ./animal.service */ "./apps/admin/src/animal/animal.service.ts");
 const animal_controller_1 = __webpack_require__(/*! ./animal.controller */ "./apps/admin/src/animal/animal.controller.ts");
+const animal_entity_1 = __webpack_require__(/*! ../../../../libs/data/src/entities/animal.entity */ "./libs/data/src/entities/animal.entity.ts");
 let AnimalModule = class AnimalModule {
 };
 exports.AnimalModule = AnimalModule;
 exports.AnimalModule = AnimalModule = __decorate([
     (0, common_1.Module)({
+        imports: [typeorm_1.TypeOrmModule.forFeature([animal_entity_1.Animal])],
         controllers: [animal_controller_1.AnimalController],
         providers: [animal_service_1.AnimalService],
+        exports: [animal_service_1.AnimalService],
     })
 ], AnimalModule);
 
@@ -142,29 +146,46 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.AnimalService = void 0;
 const common_1 = __webpack_require__(/*! @nestjs/common */ "@nestjs/common");
+const typeorm_1 = __webpack_require__(/*! @nestjs/typeorm */ "@nestjs/typeorm");
+const typeorm_2 = __webpack_require__(/*! typeorm */ "typeorm");
+const animal_entity_1 = __webpack_require__(/*! ../../../../libs/data/src/entities/animal.entity */ "./libs/data/src/entities/animal.entity.ts");
 let AnimalService = class AnimalService {
+    animalRepository;
+    constructor(animalRepository) {
+        this.animalRepository = animalRepository;
+    }
     create(createAnimalDto) {
-        return 'This action adds a new animal';
+        const animal = this.animalRepository.create(createAnimalDto);
+        return this.animalRepository.save(animal);
     }
     findAll() {
-        return `This action returns all animal`;
+        return this.animalRepository.find();
     }
     findOne(id) {
-        return `This action returns a #${id} animal`;
+        return this.animalRepository.findOneBy({ id });
     }
-    update(id, updateAnimalDto) {
-        return `This action updates a #${id} animal`;
+    async update(id, updateAnimalDto) {
+        await this.animalRepository.update(id, updateAnimalDto);
+        return this.findOne(id);
     }
     remove(id) {
-        return `This action removes a #${id} animal`;
+        return this.animalRepository.delete(id);
     }
 };
 exports.AnimalService = AnimalService;
 exports.AnimalService = AnimalService = __decorate([
-    (0, common_1.Injectable)()
+    (0, common_1.Injectable)(),
+    __param(0, (0, typeorm_1.InjectRepository)(animal_entity_1.Animal)),
+    __metadata("design:paramtypes", [typeorm_2.Repository])
 ], AnimalService);
 
 
@@ -315,76 +336,140 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.CreateEvaluationDto = void 0;
 const openapi = __webpack_require__(/*! @nestjs/swagger */ "@nestjs/swagger");
 const class_validator_1 = __webpack_require__(/*! class-validator */ "class-validator");
-const dental_evaluation_enums_1 = __webpack_require__(/*! @lib/data/enums/dental-evaluation.enums */ "./libs/data/src/enums/dental-evaluation.enums.ts");
 class CreateEvaluationDto {
     animalId;
     evaluatorId;
-    isToothAbsent;
-    fractureLevel;
+    generalObservations;
+    toothPresence;
+    toothFracture;
     crownReduction;
+    vitrifiedBorder;
     lingualWear;
     pulpitis;
     pulpChamberExposure;
+    dentalCalculus;
+    abnormalColor;
+    caries;
     gingivalRecession;
     periodontalLesions;
-    gingivitis;
-    observations;
+    gingivitisEdema;
+    gingivitisColor;
     static _OPENAPI_METADATA_FACTORY() {
-        return { animalId: { required: true, type: () => String, format: "uuid" }, evaluatorId: { required: true, type: () => String, format: "uuid" }, isToothAbsent: { required: true, type: () => Boolean }, fractureLevel: { required: true, enum: (__webpack_require__(/*! ./libs/data/src/enums/dental-evaluation.enums */ "./libs/data/src/enums/dental-evaluation.enums.ts").FractureLevel) }, crownReduction: { required: true, type: () => Boolean }, lingualWear: { required: true, type: () => Boolean }, pulpitis: { required: true, type: () => Boolean }, pulpChamberExposure: { required: true, type: () => Boolean }, gingivalRecession: { required: true, type: () => Number }, periodontalLesions: { required: true, enum: (__webpack_require__(/*! ./libs/data/src/enums/dental-evaluation.enums */ "./libs/data/src/enums/dental-evaluation.enums.ts").SeverityLevel) }, gingivitis: { required: true, enum: (__webpack_require__(/*! ./libs/data/src/enums/dental-evaluation.enums */ "./libs/data/src/enums/dental-evaluation.enums.ts").SeverityLevel) }, observations: { required: false, type: () => String } };
+        return { animalId: { required: true, type: () => String }, evaluatorId: { required: true, type: () => String }, generalObservations: { required: false, type: () => String }, toothPresence: { required: false, type: () => Boolean }, toothFracture: { required: false, type: () => Number, minimum: 0, maximum: 5 }, crownReduction: { required: false, type: () => Number, minimum: 0, maximum: 5 }, vitrifiedBorder: { required: false, type: () => Number, minimum: 0, maximum: 5 }, lingualWear: { required: false, type: () => Number, minimum: 0, maximum: 5 }, pulpitis: { required: false, type: () => Number, minimum: 0, maximum: 5 }, pulpChamberExposure: { required: false, type: () => Number, minimum: 0, maximum: 5 }, dentalCalculus: { required: false, type: () => Number, minimum: 0, maximum: 5 }, abnormalColor: { required: false, type: () => Number, minimum: 0, maximum: 5 }, caries: { required: false, type: () => Number, minimum: 0, maximum: 5 }, gingivalRecession: { required: false, type: () => Number, minimum: 0, maximum: 5 }, periodontalLesions: { required: false, type: () => Number, minimum: 0, maximum: 5 }, gingivitisEdema: { required: false, type: () => Number, minimum: 0, maximum: 5 }, gingivitisColor: { required: false, type: () => Number, minimum: 0, maximum: 5 } };
     }
 }
 exports.CreateEvaluationDto = CreateEvaluationDto;
 __decorate([
     (0, class_validator_1.IsNotEmpty)(),
-    (0, class_validator_1.IsUUID)(),
+    (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], CreateEvaluationDto.prototype, "animalId", void 0);
 __decorate([
     (0, class_validator_1.IsNotEmpty)(),
-    (0, class_validator_1.IsUUID)(),
+    (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], CreateEvaluationDto.prototype, "evaluatorId", void 0);
-__decorate([
-    (0, class_validator_1.IsBoolean)(),
-    __metadata("design:type", Boolean)
-], CreateEvaluationDto.prototype, "isToothAbsent", void 0);
-__decorate([
-    (0, class_validator_1.IsEnum)(dental_evaluation_enums_1.FractureLevel),
-    __metadata("design:type", String)
-], CreateEvaluationDto.prototype, "fractureLevel", void 0);
-__decorate([
-    (0, class_validator_1.IsBoolean)(),
-    __metadata("design:type", Boolean)
-], CreateEvaluationDto.prototype, "crownReduction", void 0);
-__decorate([
-    (0, class_validator_1.IsBoolean)(),
-    __metadata("design:type", Boolean)
-], CreateEvaluationDto.prototype, "lingualWear", void 0);
-__decorate([
-    (0, class_validator_1.IsBoolean)(),
-    __metadata("design:type", Boolean)
-], CreateEvaluationDto.prototype, "pulpitis", void 0);
-__decorate([
-    (0, class_validator_1.IsBoolean)(),
-    __metadata("design:type", Boolean)
-], CreateEvaluationDto.prototype, "pulpChamberExposure", void 0);
-__decorate([
-    (0, class_validator_1.IsNumber)(),
-    __metadata("design:type", Number)
-], CreateEvaluationDto.prototype, "gingivalRecession", void 0);
-__decorate([
-    (0, class_validator_1.IsEnum)(dental_evaluation_enums_1.SeverityLevel),
-    __metadata("design:type", String)
-], CreateEvaluationDto.prototype, "periodontalLesions", void 0);
-__decorate([
-    (0, class_validator_1.IsEnum)(dental_evaluation_enums_1.SeverityLevel),
-    __metadata("design:type", String)
-], CreateEvaluationDto.prototype, "gingivitis", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
-], CreateEvaluationDto.prototype, "observations", void 0);
+], CreateEvaluationDto.prototype, "generalObservations", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsBoolean)(),
+    __metadata("design:type", Boolean)
+], CreateEvaluationDto.prototype, "toothPresence", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.Min)(0),
+    (0, class_validator_1.Max)(5),
+    __metadata("design:type", Number)
+], CreateEvaluationDto.prototype, "toothFracture", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.Min)(0),
+    (0, class_validator_1.Max)(5),
+    __metadata("design:type", Number)
+], CreateEvaluationDto.prototype, "crownReduction", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.Min)(0),
+    (0, class_validator_1.Max)(5),
+    __metadata("design:type", Number)
+], CreateEvaluationDto.prototype, "vitrifiedBorder", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.Min)(0),
+    (0, class_validator_1.Max)(5),
+    __metadata("design:type", Number)
+], CreateEvaluationDto.prototype, "lingualWear", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.Min)(0),
+    (0, class_validator_1.Max)(5),
+    __metadata("design:type", Number)
+], CreateEvaluationDto.prototype, "pulpitis", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.Min)(0),
+    (0, class_validator_1.Max)(5),
+    __metadata("design:type", Number)
+], CreateEvaluationDto.prototype, "pulpChamberExposure", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.Min)(0),
+    (0, class_validator_1.Max)(5),
+    __metadata("design:type", Number)
+], CreateEvaluationDto.prototype, "dentalCalculus", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.Min)(0),
+    (0, class_validator_1.Max)(5),
+    __metadata("design:type", Number)
+], CreateEvaluationDto.prototype, "abnormalColor", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.Min)(0),
+    (0, class_validator_1.Max)(5),
+    __metadata("design:type", Number)
+], CreateEvaluationDto.prototype, "caries", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.Min)(0),
+    (0, class_validator_1.Max)(5),
+    __metadata("design:type", Number)
+], CreateEvaluationDto.prototype, "gingivalRecession", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.Min)(0),
+    (0, class_validator_1.Max)(5),
+    __metadata("design:type", Number)
+], CreateEvaluationDto.prototype, "periodontalLesions", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.Min)(0),
+    (0, class_validator_1.Max)(5),
+    __metadata("design:type", Number)
+], CreateEvaluationDto.prototype, "gingivitisEdema", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.Min)(0),
+    (0, class_validator_1.Max)(5),
+    __metadata("design:type", Number)
+], CreateEvaluationDto.prototype, "gingivitisColor", void 0);
 
 
 /***/ }),
@@ -943,7 +1028,6 @@ const typeorm_1 = __webpack_require__(/*! typeorm */ "typeorm");
 const animal_entity_1 = __webpack_require__(/*! ./animal.entity */ "./libs/data/src/entities/animal.entity.ts");
 const user_entity_1 = __webpack_require__(/*! ./user.entity */ "./libs/data/src/entities/user.entity.ts");
 const media_entity_1 = __webpack_require__(/*! ./media.entity */ "./libs/data/src/entities/media.entity.ts");
-const dental_evaluation_enums_1 = __webpack_require__(/*! ../enums/dental-evaluation.enums */ "./libs/data/src/enums/dental-evaluation.enums.ts");
 let DentalEvaluation = class DentalEvaluation {
     id;
     animal;
@@ -951,22 +1035,24 @@ let DentalEvaluation = class DentalEvaluation {
     evaluator;
     evaluatorUserId;
     mediaFiles;
-    latitude;
-    longitude;
     evaluationDate;
-    generalHealthStatus;
-    isToothAbsent;
-    fractureLevel;
+    generalObservations;
+    toothPresence;
+    toothFracture;
     crownReduction;
+    vitrifiedBorder;
     lingualWear;
     pulpitis;
     pulpChamberExposure;
+    dentalCalculus;
+    abnormalColor;
+    caries;
     gingivalRecession;
     periodontalLesions;
-    gingivitis;
-    generalObservations;
+    gingivitisEdema;
+    gingivitisColor;
     static _OPENAPI_METADATA_FACTORY() {
-        return { id: { required: true, type: () => Number }, animal: { required: true, type: () => (__webpack_require__(/*! ./libs/data/src/entities/animal.entity */ "./libs/data/src/entities/animal.entity.ts").Animal) }, animalId: { required: true, type: () => Number }, evaluator: { required: true, type: () => (__webpack_require__(/*! ./libs/data/src/entities/user.entity */ "./libs/data/src/entities/user.entity.ts").User) }, evaluatorUserId: { required: true, type: () => String }, mediaFiles: { required: true, type: () => [(__webpack_require__(/*! ./libs/data/src/entities/media.entity */ "./libs/data/src/entities/media.entity.ts").Media)] }, latitude: { required: true, type: () => Number }, longitude: { required: true, type: () => Number }, evaluationDate: { required: true, type: () => Date }, generalHealthStatus: { required: true, enum: (__webpack_require__(/*! ./libs/data/src/enums/dental-evaluation.enums */ "./libs/data/src/enums/dental-evaluation.enums.ts").GeneralHealthStatus) }, isToothAbsent: { required: true, type: () => Boolean }, fractureLevel: { required: true, enum: (__webpack_require__(/*! ./libs/data/src/enums/dental-evaluation.enums */ "./libs/data/src/enums/dental-evaluation.enums.ts").FractureLevel) }, crownReduction: { required: true, type: () => Boolean }, lingualWear: { required: true, type: () => Boolean }, pulpitis: { required: true, type: () => Boolean }, pulpChamberExposure: { required: true, type: () => Boolean }, gingivalRecession: { required: true, type: () => Number }, periodontalLesions: { required: true, enum: (__webpack_require__(/*! ./libs/data/src/enums/dental-evaluation.enums */ "./libs/data/src/enums/dental-evaluation.enums.ts").SeverityLevel) }, gingivitis: { required: true, enum: (__webpack_require__(/*! ./libs/data/src/enums/dental-evaluation.enums */ "./libs/data/src/enums/dental-evaluation.enums.ts").SeverityLevel) }, generalObservations: { required: true, type: () => String } };
+        return { id: { required: true, type: () => Number }, animal: { required: true, type: () => (__webpack_require__(/*! ./libs/data/src/entities/animal.entity */ "./libs/data/src/entities/animal.entity.ts").Animal) }, animalId: { required: true, type: () => Number }, evaluator: { required: true, type: () => (__webpack_require__(/*! ./libs/data/src/entities/user.entity */ "./libs/data/src/entities/user.entity.ts").User) }, evaluatorUserId: { required: true, type: () => String }, mediaFiles: { required: true, type: () => [(__webpack_require__(/*! ./libs/data/src/entities/media.entity */ "./libs/data/src/entities/media.entity.ts").Media)] }, evaluationDate: { required: true, type: () => Date }, generalObservations: { required: true, type: () => String }, toothPresence: { required: true, type: () => Boolean }, toothFracture: { required: true, type: () => Number }, crownReduction: { required: true, type: () => Number }, vitrifiedBorder: { required: true, type: () => Number }, lingualWear: { required: true, type: () => Number }, pulpitis: { required: true, type: () => Number }, pulpChamberExposure: { required: true, type: () => Number }, dentalCalculus: { required: true, type: () => Number }, abnormalColor: { required: true, type: () => Number }, caries: { required: true, type: () => Number }, gingivalRecession: { required: true, type: () => Number }, periodontalLesions: { required: true, type: () => Number }, gingivitisEdema: { required: true, type: () => Number }, gingivitisColor: { required: true, type: () => Number } };
     }
 };
 exports.DentalEvaluation = DentalEvaluation;
@@ -1004,85 +1090,69 @@ __decorate([
     __metadata("design:type", Array)
 ], DentalEvaluation.prototype, "mediaFiles", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'float', nullable: true }),
-    __metadata("design:type", Number)
-], DentalEvaluation.prototype, "latitude", void 0);
-__decorate([
-    (0, typeorm_1.Column)({ type: 'float', nullable: true }),
-    __metadata("design:type", Number)
-], DentalEvaluation.prototype, "longitude", void 0);
-__decorate([
     (0, typeorm_1.CreateDateColumn)({ name: 'evaluation_date' }),
     __metadata("design:type", Date)
 ], DentalEvaluation.prototype, "evaluationDate", void 0);
 __decorate([
-    (0, typeorm_1.Column)({
-        name: 'general_health_status',
-        type: 'simple-enum',
-        enum: dental_evaluation_enums_1.GeneralHealthStatus,
-        nullable: true
-    }),
-    __metadata("design:type", String)
-], DentalEvaluation.prototype, "generalHealthStatus", void 0);
-__decorate([
-    (0, typeorm_1.Column)({ name: 'is_tooth_absent', default: false }),
-    __metadata("design:type", Boolean)
-], DentalEvaluation.prototype, "isToothAbsent", void 0);
-__decorate([
-    (0, typeorm_1.Column)({
-        name: 'fracture_level',
-        type: 'simple-enum',
-        enum: dental_evaluation_enums_1.FractureLevel,
-        default: dental_evaluation_enums_1.FractureLevel.NONE,
-    }),
-    __metadata("design:type", String)
-], DentalEvaluation.prototype, "fractureLevel", void 0);
-__decorate([
-    (0, typeorm_1.Column)({ name: 'crown_reduction', default: false }),
-    __metadata("design:type", Boolean)
-], DentalEvaluation.prototype, "crownReduction", void 0);
-__decorate([
-    (0, typeorm_1.Column)({ name: 'lingual_wear', default: false }),
-    __metadata("design:type", Boolean)
-], DentalEvaluation.prototype, "lingualWear", void 0);
-__decorate([
-    (0, typeorm_1.Column)({ name: 'pulpitis', default: false }),
-    __metadata("design:type", Boolean)
-], DentalEvaluation.prototype, "pulpitis", void 0);
-__decorate([
-    (0, typeorm_1.Column)({ name: 'pulp_chamber_exposure', default: false }),
-    __metadata("design:type", Boolean)
-], DentalEvaluation.prototype, "pulpChamberExposure", void 0);
-__decorate([
-    (0, typeorm_1.Column)({
-        name: 'gingival_recession',
-        type: 'float',
-        default: 0
-    }),
-    __metadata("design:type", Number)
-], DentalEvaluation.prototype, "gingivalRecession", void 0);
-__decorate([
-    (0, typeorm_1.Column)({
-        name: 'periodontal_lesions',
-        type: 'simple-enum',
-        enum: dental_evaluation_enums_1.SeverityLevel,
-        default: dental_evaluation_enums_1.SeverityLevel.ABSENT
-    }),
-    __metadata("design:type", String)
-], DentalEvaluation.prototype, "periodontalLesions", void 0);
-__decorate([
-    (0, typeorm_1.Column)({
-        name: 'gingivitis',
-        type: 'simple-enum',
-        enum: dental_evaluation_enums_1.SeverityLevel,
-        default: dental_evaluation_enums_1.SeverityLevel.ABSENT,
-    }),
-    __metadata("design:type", String)
-], DentalEvaluation.prototype, "gingivitis", void 0);
-__decorate([
     (0, typeorm_1.Column)({ name: 'general_observations', type: 'text', nullable: true }),
     __metadata("design:type", String)
 ], DentalEvaluation.prototype, "generalObservations", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'tooth_presence', default: true }),
+    __metadata("design:type", Boolean)
+], DentalEvaluation.prototype, "toothPresence", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'tooth_fracture', type: 'int', default: 0 }),
+    __metadata("design:type", Number)
+], DentalEvaluation.prototype, "toothFracture", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'crown_reduction', type: 'int', default: 0 }),
+    __metadata("design:type", Number)
+], DentalEvaluation.prototype, "crownReduction", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'vitrified_border', type: 'int', default: 0 }),
+    __metadata("design:type", Number)
+], DentalEvaluation.prototype, "vitrifiedBorder", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'lingual_wear', type: 'int', default: 0 }),
+    __metadata("design:type", Number)
+], DentalEvaluation.prototype, "lingualWear", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'pulpitis', type: 'int', default: 0 }),
+    __metadata("design:type", Number)
+], DentalEvaluation.prototype, "pulpitis", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'pulp_chamber_exposure', type: 'int', default: 0 }),
+    __metadata("design:type", Number)
+], DentalEvaluation.prototype, "pulpChamberExposure", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'dental_calculus', type: 'int', default: 0 }),
+    __metadata("design:type", Number)
+], DentalEvaluation.prototype, "dentalCalculus", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'abnormal_color', type: 'int', default: 0 }),
+    __metadata("design:type", Number)
+], DentalEvaluation.prototype, "abnormalColor", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'caries', type: 'int', default: 0 }),
+    __metadata("design:type", Number)
+], DentalEvaluation.prototype, "caries", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'gingival_recession', type: 'int', default: 0 }),
+    __metadata("design:type", Number)
+], DentalEvaluation.prototype, "gingivalRecession", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'periodontal_lesions', type: 'int', default: 0 }),
+    __metadata("design:type", Number)
+], DentalEvaluation.prototype, "periodontalLesions", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'gingivitis_edema', type: 'int', default: 0 }),
+    __metadata("design:type", Number)
+], DentalEvaluation.prototype, "gingivitisEdema", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'gingivitis_color', type: 'int', default: 0 }),
+    __metadata("design:type", Number)
+], DentalEvaluation.prototype, "gingivitisColor", void 0);
 exports.DentalEvaluation = DentalEvaluation = __decorate([
     (0, typeorm_1.Entity)('dental_evaluation')
 ], DentalEvaluation);
@@ -1254,7 +1324,9 @@ var GeneralHealthStatus;
 var PhotoType;
 (function (PhotoType) {
     PhotoType["FRONTAL"] = "FRONTAL";
-    PhotoType["VESTIBULAR"] = "VESTIBULAR";
+    PhotoType["SUPERIOR"] = "SUPERIOR";
+    PhotoType["LATERAL_LEFT"] = "LATERAL_LEFT";
+    PhotoType["LATERAL_RIGHT"] = "LATERAL_RIGHT";
 })(PhotoType || (exports.PhotoType = PhotoType = {}));
 
 

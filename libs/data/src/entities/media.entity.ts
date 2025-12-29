@@ -11,6 +11,7 @@ export class Media {
   @Column({ name: 's3_url_path', type: 'text' })
   s3UrlPath: string;
 
+  // Certifique-se que o Enum PhotoType tenha 'FRONTAL' e 'SUPERIOR' (ou 'OCCLUSAL')
   @Column({ 
     name: 'photo_type',
     type: 'simple-enum',

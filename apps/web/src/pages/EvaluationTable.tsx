@@ -16,9 +16,8 @@ import { Add } from '@mui/icons-material';
 import { api } from '../services/api';
 import { EvaluationModal } from '../components/EvaluationModal';
 
-// Interface espelhando o retorno do endpoint 'findAllHistory' do Backend
 interface EvaluationData {
-  id: string; // ID do Animal
+  id: string; 
   code: string;
   breed: string;
   lastEvaluationDate: string | null;
@@ -30,11 +29,17 @@ export default function EvaluationTable() {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const fetchData = () => {
-    // ROTA CORRIGIDA: O backend expõe o histórico em 'evaluations/history'
     api.get('/evaluations/history')
       .then((res) => {
-        // ESTRUTURA CORRIGIDA: O backend retorna { data: [...], meta: ... }
-        setEvaluations(res.data.data); 
+        // CORREÇÃO: Verifica se o retorno está dentro de 'data' (paginado) ou raiz
+        const dataList = res.data.data ? res.data.data : res.data;
+        
+        if (Array.isArray(dataList)) {
+            setEvaluations(dataList);
+        } else {
+            console.warn("Formato de resposta inesperado:", res.data);
+            setEvaluations([]);
+        }
       })
       .catch((error) => console.error('Erro ao carregar histórico:', error));
   };

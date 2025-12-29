@@ -19,5 +19,7 @@ export declare enum GeneralHealthStatus {
 }
 export declare enum PhotoType {
     FRONTAL = "FRONTAL",
-    VESTIBULAR = "VESTIBULAR"
+    SUPERIOR = "SUPERIOR",
+    LATERAL_LEFT = "LATERAL_LEFT",
+    LATERAL_RIGHT = "LATERAL_RIGHT"
 }

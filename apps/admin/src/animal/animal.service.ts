@@ -1,26 +1,43 @@
 import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { CreateAnimalDto } from './dto/create-animal.dto';
 import { UpdateAnimalDto } from './dto/update-animal.dto';
+import { Animal } from '../../../../libs/data/src/entities/animal.entity';
 
 @Injectable()
 export class AnimalService {
+  constructor(
+    @InjectRepository(Animal)
+    private animalRepository: Repository<Animal>,
+  ) {}
+
+  // 1. CREATE (Salvar no Banco)
   create(createAnimalDto: CreateAnimalDto) {
-    return 'This action adds a new animal';
+    const animal = this.animalRepository.create(createAnimalDto);
+    return this.animalRepository.save(animal);
   }
 
+  // 2. FIND ALL (Buscar Todos)
   findAll() {
-    return `This action returns all animal`;
+    return this.animalRepository.find();
   }
 
+  // 3. FIND ONE (Buscar um pelo ID)
   findOne(id: number) {
-    return `This action returns a #${id} animal`;
+    // ATENÇÃO: Se seu banco usar UUID (letras e números), 
+    // mude o tipo 'id: number' para 'id: any' ou 'id: string'
+    return this.animalRepository.findOneBy({ id } as any);
   }
 
-  update(id: number, updateAnimalDto: UpdateAnimalDto) {
-    return `This action updates a #${id} animal`;
+  // 4. UPDATE (Atualizar)
+  async update(id: number, updateAnimalDto: UpdateAnimalDto) {
+    await this.animalRepository.update(id, updateAnimalDto);
+    return this.findOne(id);
   }
 
+  // 5. REMOVE (Deletar)
   remove(id: number) {
-    return `This action removes a #${id} animal`;
+    return this.animalRepository.delete(id);
   }
 }

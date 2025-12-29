@@ -22,5 +22,7 @@ export enum GeneralHealthStatus {
 
 export enum PhotoType {
   FRONTAL = 'FRONTAL',
-  VESTIBULAR = 'VESTIBULAR',
+  SUPERIOR = 'SUPERIOR', // Ou 'DORSAL' / 'OCCLUSAL' - "Vista de Cima"
+  LATERAL_LEFT = 'LATERAL_LEFT', 
+  LATERAL_RIGHT = 'LATERAL_RIGHT' 
 }
