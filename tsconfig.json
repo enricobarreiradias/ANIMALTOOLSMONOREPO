@@ -18,6 +18,7 @@
     "strictBindCallApply": false,
     "noFallthroughCasesInSwitch": false,
     "paths": {
+      "@app/data/*": ["libs/data/src/*"],
       "@lib/data": ["libs/data/src"],
       "@lib/data/*": ["libs/data/src/*"],
       "@lib/config": ["libs/config/src"],

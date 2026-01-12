@@ -3,8 +3,13 @@ import { Media } from './media.entity';
 export declare class Animal {
     id: number;
     tagCode: string;
-    animalIdentifier: string;
     breed: string;
+    age: number;
+    farm: string;
+    client: string;
+    location: string;
+    collectionDate: Date;
+    animalIdentifier: string;
     ageInMonths: number;
     generalStatus: string;
     registrationDate: Date;

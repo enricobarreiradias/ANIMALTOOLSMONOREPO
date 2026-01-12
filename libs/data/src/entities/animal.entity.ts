@@ -7,25 +7,40 @@ export class Animal {
   @PrimaryGeneratedColumn('increment')
   id: number;
 
-  @Column({ name: 'tag_code' })   
+  @Column({ name: 'tag_code', unique: true })   
   tagCode: string;
-
-  @Column({ name: 'animal_identifier', nullable: true })
-  animalIdentifier: string;
 
   @Column()
   breed: string;
 
-  @Column({ name: 'age_in_months', nullable: true })
+  @Column({ nullable: true })
+  age: number;
+
+  @Column({ nullable: true })
+  farm: string;
+
+  @Column({ nullable: true })
+  client: string;
+
+  @Column({ nullable: true })
+  location: string;
+
+  @Column({ name: 'collection_date', type: 'timestamp', nullable: true })
+  collectionDate: Date;
+
+  // --- CAMPOS LEGADOS ---
+  @Column({ name: 'animal_identifier', nullable: true })
+  animalIdentifier: string;
+
+  @Column({ name: 'age_in_months', nullable: true }) // Mantido caso o legado use
   ageInMonths: number;
 
   @Column({ name: 'general_status', nullable: true })
   generalStatus: string;
 
+  // --- DATAS E RELACIONAMENTOS ---
   @CreateDateColumn({ name: 'registration_date' })
   registrationDate: Date;
-
-  // --- RELACIONAMENTOS ---
 
   @OneToMany(() => DentalEvaluation, (evaluation) => evaluation.animal)
   dentalEvaluations: DentalEvaluation[];

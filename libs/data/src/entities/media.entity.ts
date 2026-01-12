@@ -11,7 +11,6 @@ export class Media {
   @Column({ name: 's3_url_path', type: 'text' })
   s3UrlPath: string;
 
-  // Certifique-se que o Enum PhotoType tenha 'FRONTAL' e 'SUPERIOR' (ou 'OCCLUSAL')
   @Column({ 
     name: 'photo_type',
     type: 'simple-enum',
@@ -25,13 +24,16 @@ export class Media {
 
   // --- RELACIONAMENTOS ---
 
-  @ManyToOne(() => Animal, (animal) => animal.mediaFiles)
+  // Relação com Animal
+  @ManyToOne(() => Animal, (animal) => animal.mediaFiles, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'animal_id' })
   animal: Animal;
 
   @Column({ name: 'animal_id' })
   animalId: number;
 
+  // Relação com Avaliação 
+  // Útil se no futuro quisermos saber quais fotos foram usadas em qual laudo
   @ManyToMany(() => DentalEvaluation, (evaluation) => evaluation.mediaFiles)
   evaluations: DentalEvaluation[];
 }

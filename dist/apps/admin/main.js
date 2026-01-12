@@ -316,186 +316,6 @@ exports.AppModule = AppModule = __decorate([
 
 /***/ }),
 
-/***/ "./apps/admin/src/evaluation/dto/create-evaluation.dto.ts":
-/*!****************************************************************!*\
-  !*** ./apps/admin/src/evaluation/dto/create-evaluation.dto.ts ***!
-  \****************************************************************/
-/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
-
-
-var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
-    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
-    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
-    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
-    return c > 3 && r && Object.defineProperty(target, key, r), r;
-};
-var __metadata = (this && this.__metadata) || function (k, v) {
-    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.CreateEvaluationDto = void 0;
-const openapi = __webpack_require__(/*! @nestjs/swagger */ "@nestjs/swagger");
-const class_validator_1 = __webpack_require__(/*! class-validator */ "class-validator");
-class CreateEvaluationDto {
-    animalId;
-    evaluatorId;
-    generalObservations;
-    toothPresence;
-    toothFracture;
-    crownReduction;
-    vitrifiedBorder;
-    lingualWear;
-    pulpitis;
-    pulpChamberExposure;
-    dentalCalculus;
-    abnormalColor;
-    caries;
-    gingivalRecession;
-    periodontalLesions;
-    gingivitisEdema;
-    gingivitisColor;
-    static _OPENAPI_METADATA_FACTORY() {
-        return { animalId: { required: true, type: () => String }, evaluatorId: { required: true, type: () => String }, generalObservations: { required: false, type: () => String }, toothPresence: { required: false, type: () => Boolean }, toothFracture: { required: false, type: () => Number, minimum: 0, maximum: 5 }, crownReduction: { required: false, type: () => Number, minimum: 0, maximum: 5 }, vitrifiedBorder: { required: false, type: () => Number, minimum: 0, maximum: 5 }, lingualWear: { required: false, type: () => Number, minimum: 0, maximum: 5 }, pulpitis: { required: false, type: () => Number, minimum: 0, maximum: 5 }, pulpChamberExposure: { required: false, type: () => Number, minimum: 0, maximum: 5 }, dentalCalculus: { required: false, type: () => Number, minimum: 0, maximum: 5 }, abnormalColor: { required: false, type: () => Number, minimum: 0, maximum: 5 }, caries: { required: false, type: () => Number, minimum: 0, maximum: 5 }, gingivalRecession: { required: false, type: () => Number, minimum: 0, maximum: 5 }, periodontalLesions: { required: false, type: () => Number, minimum: 0, maximum: 5 }, gingivitisEdema: { required: false, type: () => Number, minimum: 0, maximum: 5 }, gingivitisColor: { required: false, type: () => Number, minimum: 0, maximum: 5 } };
-    }
-}
-exports.CreateEvaluationDto = CreateEvaluationDto;
-__decorate([
-    (0, class_validator_1.IsNotEmpty)(),
-    (0, class_validator_1.IsString)(),
-    __metadata("design:type", String)
-], CreateEvaluationDto.prototype, "animalId", void 0);
-__decorate([
-    (0, class_validator_1.IsNotEmpty)(),
-    (0, class_validator_1.IsString)(),
-    __metadata("design:type", String)
-], CreateEvaluationDto.prototype, "evaluatorId", void 0);
-__decorate([
-    (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsString)(),
-    __metadata("design:type", String)
-], CreateEvaluationDto.prototype, "generalObservations", void 0);
-__decorate([
-    (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsBoolean)(),
-    __metadata("design:type", Boolean)
-], CreateEvaluationDto.prototype, "toothPresence", void 0);
-__decorate([
-    (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsNumber)(),
-    (0, class_validator_1.Min)(0),
-    (0, class_validator_1.Max)(5),
-    __metadata("design:type", Number)
-], CreateEvaluationDto.prototype, "toothFracture", void 0);
-__decorate([
-    (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsNumber)(),
-    (0, class_validator_1.Min)(0),
-    (0, class_validator_1.Max)(5),
-    __metadata("design:type", Number)
-], CreateEvaluationDto.prototype, "crownReduction", void 0);
-__decorate([
-    (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsNumber)(),
-    (0, class_validator_1.Min)(0),
-    (0, class_validator_1.Max)(5),
-    __metadata("design:type", Number)
-], CreateEvaluationDto.prototype, "vitrifiedBorder", void 0);
-__decorate([
-    (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsNumber)(),
-    (0, class_validator_1.Min)(0),
-    (0, class_validator_1.Max)(5),
-    __metadata("design:type", Number)
-], CreateEvaluationDto.prototype, "lingualWear", void 0);
-__decorate([
-    (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsNumber)(),
-    (0, class_validator_1.Min)(0),
-    (0, class_validator_1.Max)(5),
-    __metadata("design:type", Number)
-], CreateEvaluationDto.prototype, "pulpitis", void 0);
-__decorate([
-    (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsNumber)(),
-    (0, class_validator_1.Min)(0),
-    (0, class_validator_1.Max)(5),
-    __metadata("design:type", Number)
-], CreateEvaluationDto.prototype, "pulpChamberExposure", void 0);
-__decorate([
-    (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsNumber)(),
-    (0, class_validator_1.Min)(0),
-    (0, class_validator_1.Max)(5),
-    __metadata("design:type", Number)
-], CreateEvaluationDto.prototype, "dentalCalculus", void 0);
-__decorate([
-    (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsNumber)(),
-    (0, class_validator_1.Min)(0),
-    (0, class_validator_1.Max)(5),
-    __metadata("design:type", Number)
-], CreateEvaluationDto.prototype, "abnormalColor", void 0);
-__decorate([
-    (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsNumber)(),
-    (0, class_validator_1.Min)(0),
-    (0, class_validator_1.Max)(5),
-    __metadata("design:type", Number)
-], CreateEvaluationDto.prototype, "caries", void 0);
-__decorate([
-    (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsNumber)(),
-    (0, class_validator_1.Min)(0),
-    (0, class_validator_1.Max)(5),
-    __metadata("design:type", Number)
-], CreateEvaluationDto.prototype, "gingivalRecession", void 0);
-__decorate([
-    (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsNumber)(),
-    (0, class_validator_1.Min)(0),
-    (0, class_validator_1.Max)(5),
-    __metadata("design:type", Number)
-], CreateEvaluationDto.prototype, "periodontalLesions", void 0);
-__decorate([
-    (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsNumber)(),
-    (0, class_validator_1.Min)(0),
-    (0, class_validator_1.Max)(5),
-    __metadata("design:type", Number)
-], CreateEvaluationDto.prototype, "gingivitisEdema", void 0);
-__decorate([
-    (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsNumber)(),
-    (0, class_validator_1.Min)(0),
-    (0, class_validator_1.Max)(5),
-    __metadata("design:type", Number)
-], CreateEvaluationDto.prototype, "gingivitisColor", void 0);
-
-
-/***/ }),
-
-/***/ "./apps/admin/src/evaluation/dto/update-evaluation.dto.ts":
-/*!****************************************************************!*\
-  !*** ./apps/admin/src/evaluation/dto/update-evaluation.dto.ts ***!
-  \****************************************************************/
-/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
-
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.UpdateEvaluationDto = void 0;
-const openapi = __webpack_require__(/*! @nestjs/swagger */ "@nestjs/swagger");
-const mapped_types_1 = __webpack_require__(/*! @nestjs/mapped-types */ "@nestjs/mapped-types");
-const create_evaluation_dto_1 = __webpack_require__(/*! ./create-evaluation.dto */ "./apps/admin/src/evaluation/dto/create-evaluation.dto.ts");
-class UpdateEvaluationDto extends (0, mapped_types_1.PartialType)(create_evaluation_dto_1.CreateEvaluationDto) {
-    static _OPENAPI_METADATA_FACTORY() {
-        return {};
-    }
-}
-exports.UpdateEvaluationDto = UpdateEvaluationDto;
-
-
-/***/ }),
-
 /***/ "./apps/admin/src/evaluation/evaluation.controller.ts":
 /*!************************************************************!*\
   !*** ./apps/admin/src/evaluation/evaluation.controller.ts ***!
@@ -519,12 +339,10 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.EvaluationController = void 0;
 const openapi = __webpack_require__(/*! @nestjs/swagger */ "@nestjs/swagger");
 const common_1 = __webpack_require__(/*! @nestjs/common */ "@nestjs/common");
-const update_evaluation_dto_1 = __webpack_require__(/*! ./dto/update-evaluation.dto */ "./apps/admin/src/evaluation/dto/update-evaluation.dto.ts");
 const platform_express_1 = __webpack_require__(/*! @nestjs/platform-express */ "@nestjs/platform-express");
 const multer_1 = __webpack_require__(/*! multer */ "multer");
 const path_1 = __webpack_require__(/*! path */ "path");
 const evaluation_service_1 = __webpack_require__(/*! ./evaluation.service */ "./apps/admin/src/evaluation/evaluation.service.ts");
-const create_evaluation_dto_1 = __webpack_require__(/*! ./dto/create-evaluation.dto */ "./apps/admin/src/evaluation/dto/create-evaluation.dto.ts");
 let EvaluationController = class EvaluationController {
     evaluationService;
     constructor(evaluationService) {
@@ -534,7 +352,7 @@ let EvaluationController = class EvaluationController {
         return await this.evaluationService.create(createEvaluationDto);
     }
     async uploadAnimal(files, body) {
-        const baseUrl = 'http://localhost:3000';
+        const baseUrl = 'http://localhost:3333';
         const frontalPath = files.frontal
             ? `${baseUrl}/uploads/${files.frontal[0].filename}`
             : null;
@@ -575,7 +393,7 @@ __decorate([
     openapi.ApiResponse({ status: 201, type: (__webpack_require__(/*! ./libs/data/src/entities/dental-evaluation.entity */ "./libs/data/src/entities/dental-evaluation.entity.ts").DentalEvaluation) }),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [create_evaluation_dto_1.CreateEvaluationDto]),
+    __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], EvaluationController.prototype, "create", null);
 __decorate([
@@ -652,7 +470,7 @@ __decorate([
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, update_evaluation_dto_1.UpdateEvaluationDto]),
+    __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", Promise)
 ], EvaluationController.prototype, "update", null);
 __decorate([
@@ -690,17 +508,24 @@ const common_1 = __webpack_require__(/*! @nestjs/common */ "@nestjs/common");
 const typeorm_1 = __webpack_require__(/*! @nestjs/typeorm */ "@nestjs/typeorm");
 const evaluation_service_1 = __webpack_require__(/*! ./evaluation.service */ "./apps/admin/src/evaluation/evaluation.service.ts");
 const evaluation_controller_1 = __webpack_require__(/*! ./evaluation.controller */ "./apps/admin/src/evaluation/evaluation.controller.ts");
-const dental_evaluation_entity_1 = __webpack_require__(/*! @lib/data/entities/dental-evaluation.entity */ "./libs/data/src/entities/dental-evaluation.entity.ts");
-const animal_entity_1 = __webpack_require__(/*! @lib/data/entities/animal.entity */ "./libs/data/src/entities/animal.entity.ts");
-const user_entity_1 = __webpack_require__(/*! @lib/data/entities/user.entity */ "./libs/data/src/entities/user.entity.ts");
-const media_entity_1 = __webpack_require__(/*! @lib/data/entities/media.entity */ "./libs/data/src/entities/media.entity.ts");
+const dental_evaluation_entity_1 = __webpack_require__(/*! ../../../../libs/data/src/entities/dental-evaluation.entity */ "./libs/data/src/entities/dental-evaluation.entity.ts");
+const tooth_evaluation_entity_1 = __webpack_require__(/*! ../../../../libs/data/src/entities/tooth-evaluation.entity */ "./libs/data/src/entities/tooth-evaluation.entity.ts");
+const animal_entity_1 = __webpack_require__(/*! ../../../../libs/data/src/entities/animal.entity */ "./libs/data/src/entities/animal.entity.ts");
+const user_entity_1 = __webpack_require__(/*! ../../../../libs/data/src/entities/user.entity */ "./libs/data/src/entities/user.entity.ts");
+const media_entity_1 = __webpack_require__(/*! ../../../../libs/data/src/entities/media.entity */ "./libs/data/src/entities/media.entity.ts");
 let EvaluationModule = class EvaluationModule {
 };
 exports.EvaluationModule = EvaluationModule;
 exports.EvaluationModule = EvaluationModule = __decorate([
     (0, common_1.Module)({
         imports: [
-            typeorm_1.TypeOrmModule.forFeature([dental_evaluation_entity_1.DentalEvaluation, animal_entity_1.Animal, user_entity_1.User, media_entity_1.Media]),
+            typeorm_1.TypeOrmModule.forFeature([
+                dental_evaluation_entity_1.DentalEvaluation,
+                tooth_evaluation_entity_1.ToothEvaluation,
+                animal_entity_1.Animal,
+                user_entity_1.User,
+                media_entity_1.Media
+            ])
         ],
         controllers: [evaluation_controller_1.EvaluationController],
         providers: [evaluation_service_1.EvaluationService],
@@ -734,19 +559,22 @@ exports.EvaluationService = void 0;
 const common_1 = __webpack_require__(/*! @nestjs/common */ "@nestjs/common");
 const typeorm_1 = __webpack_require__(/*! @nestjs/typeorm */ "@nestjs/typeorm");
 const typeorm_2 = __webpack_require__(/*! typeorm */ "typeorm");
-const dental_evaluation_entity_1 = __webpack_require__(/*! ../../../../libs/data/src/entities/dental-evaluation.entity */ "./libs/data/src/entities/dental-evaluation.entity.ts");
-const animal_entity_1 = __webpack_require__(/*! ../../../../libs/data/src/entities/animal.entity */ "./libs/data/src/entities/animal.entity.ts");
-const user_entity_1 = __webpack_require__(/*! ../../../../libs/data/src/entities/user.entity */ "./libs/data/src/entities/user.entity.ts");
-const media_entity_1 = __webpack_require__(/*! ../../../../libs/data/src/entities/media.entity */ "./libs/data/src/entities/media.entity.ts");
-const dental_evaluation_enums_1 = __webpack_require__(/*! ../../../../libs/data/src/enums/dental-evaluation.enums */ "./libs/data/src/enums/dental-evaluation.enums.ts");
+const dental_evaluation_entity_1 = __webpack_require__(/*! @app/data/entities/dental-evaluation.entity */ "./libs/data/src/entities/dental-evaluation.entity.ts");
+const tooth_evaluation_entity_1 = __webpack_require__(/*! @app/data/entities/tooth-evaluation.entity */ "./libs/data/src/entities/tooth-evaluation.entity.ts");
+const animal_entity_1 = __webpack_require__(/*! @app/data/entities/animal.entity */ "./libs/data/src/entities/animal.entity.ts");
+const user_entity_1 = __webpack_require__(/*! @app/data/entities/user.entity */ "./libs/data/src/entities/user.entity.ts");
+const media_entity_1 = __webpack_require__(/*! @app/data/entities/media.entity */ "./libs/data/src/entities/media.entity.ts");
+const dental_evaluation_enums_1 = __webpack_require__(/*! @app/data/enums/dental-evaluation.enums */ "./libs/data/src/enums/dental-evaluation.enums.ts");
 let EvaluationService = class EvaluationService {
     evaluationRepository;
+    toothRepository;
     animalRepository;
     userRepository;
     mediaRepository;
     dataSource;
-    constructor(evaluationRepository, animalRepository, userRepository, mediaRepository, dataSource) {
+    constructor(evaluationRepository, toothRepository, animalRepository, userRepository, mediaRepository, dataSource) {
         this.evaluationRepository = evaluationRepository;
+        this.toothRepository = toothRepository;
         this.animalRepository = animalRepository;
         this.userRepository = userRepository;
         this.mediaRepository = mediaRepository;
@@ -757,29 +585,57 @@ let EvaluationService = class EvaluationService {
         const animal = await this.animalRepository.findOne({
             where: { id: animalIdNumber }
         });
-        if (!animal) {
+        if (!animal)
             throw new common_1.NotFoundException(`Animal não encontrado.`);
-        }
         let evaluator = await this.userRepository.findOne({
             where: { id: createDto.evaluatorId }
         });
         if (!evaluator) {
             evaluator = await this.userRepository.findOne({ order: { registrationDate: 'ASC' } });
         }
-        if (!evaluator) {
-            throw new common_1.NotFoundException(`Nenhum avaliador encontrado no sistema. Rode o seed ou crie um usuário.`);
-        }
-        const { animalId, evaluatorId, ...clinicalData } = createDto;
+        if (!evaluator)
+            throw new common_1.NotFoundException(`Nenhum avaliador encontrado.`);
         const evaluation = this.evaluationRepository.create({
-            ...clinicalData,
             animal: animal,
-            evaluator: evaluator
+            evaluator: evaluator,
+            generalObservations: createDto.notes || '',
+            evaluationDate: new Date()
         });
-        return await this.evaluationRepository.save(evaluation);
+        const savedEvaluation = await this.evaluationRepository.save(evaluation);
+        if (createDto.teeth && Array.isArray(createDto.teeth)) {
+            for (const toothData of createDto.teeth) {
+                const tooth = this.toothRepository.create({
+                    evaluation: savedEvaluation,
+                    toothCode: toothData.toothCode,
+                    toothType: toothData.toothType || dental_evaluation_enums_1.ToothType.PERMANENT,
+                    isPresent: toothData.isPresent !== false,
+                    crownReductionLevel: toothData.crownReductionLevel || dental_evaluation_enums_1.SeverityScale.NONE,
+                    lingualWear: toothData.lingualWear || dental_evaluation_enums_1.SeverityScale.NONE,
+                    gingivalRecessionLevel: toothData.gingivalRecessionLevel || dental_evaluation_enums_1.SeverityScale.NONE,
+                    periodontalLesions: toothData.periodontalLesions || dental_evaluation_enums_1.SeverityScale.NONE,
+                    fractureLevel: toothData.fractureLevel || dental_evaluation_enums_1.SeverityScale.NONE,
+                    pulpitis: toothData.pulpitis || dental_evaluation_enums_1.SeverityScale.NONE,
+                    vitrifiedBorder: toothData.vitrifiedBorder || dental_evaluation_enums_1.SeverityScale.NONE,
+                    pulpChamberExposure: toothData.pulpChamberExposure || dental_evaluation_enums_1.SeverityScale.NONE,
+                    gingivitisEdema: toothData.gingivitisEdema || dental_evaluation_enums_1.SeverityScale.NONE,
+                    gingivitisColor: toothData.gingivitisColor || dental_evaluation_enums_1.ColorScale.NORMAL,
+                    dentalCalculus: toothData.dentalCalculus || dental_evaluation_enums_1.SeverityScale.NONE,
+                    abnormalColor: toothData.abnormalColor || dental_evaluation_enums_1.ColorScale.NORMAL,
+                    caries: toothData.caries || dental_evaluation_enums_1.SeverityScale.NONE,
+                });
+                await this.toothRepository.save(tooth);
+            }
+        }
+        else {
+            await this.createDefaultHealthyTeeth(savedEvaluation);
+        }
+        return this.findOne(savedEvaluation.id);
     }
     async findPendingEvaluations() {
         const animals = await this.animalRepository.find({
             relations: ['dentalEvaluations', 'mediaFiles'],
+            order: { id: 'DESC' },
+            take: 50
         });
         return animals
             .filter(a => a.dentalEvaluations.length === 0)
@@ -787,44 +643,148 @@ let EvaluationService = class EvaluationService {
             id: a.id.toString(),
             code: a.tagCode,
             breed: a.breed,
+            farm: a.farm,
+            client: a.client,
+            entryDate: a.collectionDate ? new Date(a.collectionDate).toLocaleDateString('pt-BR') : new Date(a.registrationDate).toLocaleDateString('pt-BR'),
             media: a.mediaFiles?.map(m => m.s3UrlPath) || []
         }));
     }
     async findAllHistory(page = 1, limit = 10) {
-        const [result, total] = await this.animalRepository.createQueryBuilder('animal')
-            .innerJoinAndSelect('animal.dentalEvaluations', 'evaluation')
-            .leftJoinAndSelect('animal.mediaFiles', 'media')
-            .orderBy('evaluation.evaluationDate', 'DESC')
-            .skip((page - 1) * limit)
-            .take(limit)
-            .getManyAndCount();
+        const [evaluations, total] = await this.evaluationRepository.findAndCount({
+            relations: ['animal', 'mediaFiles', 'teeth'],
+            order: { id: 'DESC' },
+            skip: (page - 1) * limit,
+            take: limit
+        });
         return {
-            data: result.map(a => ({
-                id: a.id.toString(),
-                code: a.tagCode,
-                breed: a.breed,
-                lastEvaluationDate: a.dentalEvaluations[0]?.evaluationDate,
-                media: a.mediaFiles.map(m => m.s3UrlPath)
-            })),
+            data: evaluations.map(ev => {
+                const maxFracture = ev.teeth?.length
+                    ? Math.max(...ev.teeth.map(t => t.fractureLevel))
+                    : 0;
+                const isCritical = ev.teeth?.some(t => t.fractureLevel >= dental_evaluation_enums_1.SeverityScale.SEVERE ||
+                    t.pulpitis >= dental_evaluation_enums_1.SeverityScale.SEVERE ||
+                    t.gingivalRecessionLevel >= dental_evaluation_enums_1.SeverityScale.SEVERE);
+                return {
+                    id: ev.id.toString(),
+                    animalId: ev.animal.id.toString(),
+                    code: ev.animal.tagCode,
+                    breed: ev.animal.breed,
+                    lastEvaluationDate: ev.evaluationDate,
+                    media: ev.mediaFiles?.map(m => m.s3UrlPath) || [],
+                    worstFracture: maxFracture,
+                    isCritical: isCritical
+                };
+            }),
             meta: { total, page, limit }
         };
     }
-    async createAnimalFromUpload(code, breed, mediaPaths) {
+    async findOne(id) {
+        const evaluation = await this.evaluationRepository.findOne({
+            where: { id },
+            relations: ['animal', 'evaluator', 'mediaFiles', 'teeth'],
+        });
+        if (!evaluation) {
+            throw new common_1.NotFoundException(`Avaliação #${id} não encontrada.`);
+        }
+        return evaluation;
+    }
+    async update(id, updateDto) {
+        const evaluation = await this.findOne(id);
+        if (updateDto.notes !== undefined) {
+            evaluation.generalObservations = updateDto.notes;
+        }
+        await this.evaluationRepository.save(evaluation);
+        if (updateDto.teeth && Array.isArray(updateDto.teeth)) {
+            for (const t of updateDto.teeth) {
+                const tooth = await this.toothRepository.findOne({
+                    where: { evaluation: { id: id }, toothCode: t.toothCode }
+                });
+                if (tooth) {
+                    if (t.toothType !== undefined)
+                        tooth.toothType = t.toothType;
+                    if (t.fractureLevel !== undefined)
+                        tooth.fractureLevel = t.fractureLevel;
+                    if (t.lingualWear !== undefined)
+                        tooth.lingualWear = t.lingualWear;
+                    if (t.crownReductionLevel !== undefined)
+                        tooth.crownReductionLevel = t.crownReductionLevel;
+                    if (t.gingivalRecessionLevel !== undefined)
+                        tooth.gingivalRecessionLevel = t.gingivalRecessionLevel;
+                    if (t.pulpitis !== undefined)
+                        tooth.pulpitis = t.pulpitis;
+                    if (t.dentalCalculus !== undefined)
+                        tooth.dentalCalculus = t.dentalCalculus;
+                    if (t.caries !== undefined)
+                        tooth.caries = t.caries;
+                    if (t.abnormalColor !== undefined)
+                        tooth.abnormalColor = t.abnormalColor;
+                    if (t.gingivitisColor !== undefined)
+                        tooth.gingivitisColor = t.gingivitisColor;
+                    await this.toothRepository.save(tooth);
+                }
+            }
+        }
+        return this.findOne(id);
+    }
+    async remove(id) {
+        const evaluation = await this.findOne(id);
+        return await this.evaluationRepository.remove(evaluation);
+    }
+    async findHistoryByAnimal(animalIdOrTag) {
+        const isId = !isNaN(Number(animalIdOrTag));
+        const query = this.evaluationRepository.createQueryBuilder('evaluation')
+            .leftJoinAndSelect('evaluation.animal', 'animal')
+            .leftJoinAndSelect('evaluation.mediaFiles', 'media')
+            .leftJoinAndSelect('evaluation.evaluator', 'evaluator')
+            .leftJoinAndSelect('evaluation.teeth', 'teeth');
+        if (isId) {
+            query.where('animal.id = :id', { id: animalIdOrTag });
+        }
+        else {
+            query.where('animal.tagCode = :tag', { tag: animalIdOrTag });
+        }
+        return await query.orderBy('evaluation.evaluationDate', 'DESC').getMany();
+    }
+    async getDashboardStats() {
+        const totalAnimals = await this.animalRepository.count();
+        const totalEvaluations = await this.evaluationRepository.count();
+        const pendingList = await this.findPendingEvaluations();
+        const criticalQuery = this.evaluationRepository.createQueryBuilder('eval')
+            .innerJoin('eval.teeth', 'tooth')
+            .where('tooth.fracture_level >= :level', { level: dental_evaluation_enums_1.SeverityScale.SEVERE })
+            .orWhere('tooth.pulpitis >= :level', { level: dental_evaluation_enums_1.SeverityScale.SEVERE })
+            .orWhere('tooth.gingival_recession_level >= :level', { level: dental_evaluation_enums_1.SeverityScale.SEVERE });
+        const criticalCases = await criticalQuery.getCount();
+        return {
+            totalAnimals,
+            totalEvaluations,
+            pendingEvaluations: pendingList.length,
+            criticalCases,
+        };
+    }
+    async createAnimalFromUpload(code, breed, mediaPaths, details) {
         const queryRunner = this.dataSource.createQueryRunner();
         await queryRunner.connect();
         await queryRunner.startTransaction();
         try {
-            const newAnimal = this.animalRepository.create({
+            const animalPayload = {
                 tagCode: code,
                 breed: breed,
-            });
+                farm: details?.farm,
+                client: details?.client,
+                location: details?.location,
+                collectionDate: details?.collectionDate || new Date(),
+                age: details?.age || 24,
+            };
+            const newAnimal = this.animalRepository.create(animalPayload);
             const savedAnimal = await queryRunner.manager.save(newAnimal);
             for (const [index, path] of mediaPaths.entries()) {
-                const newMedia = this.mediaRepository.create({
+                const mediaPayload = {
                     s3UrlPath: path,
-                    photoType: index === 0 ? dental_evaluation_enums_1.PhotoType.FRONTAL : dental_evaluation_enums_1.PhotoType.VESTIBULAR,
+                    photoType: index === 0 ? dental_evaluation_enums_1.PhotoType.FRONTAL : dental_evaluation_enums_1.PhotoType.LATERAL_LEFT,
                     animal: savedAnimal
-                });
+                };
+                const newMedia = this.mediaRepository.create(mediaPayload);
                 await queryRunner.manager.save(newMedia);
             }
             await queryRunner.commitTransaction();
@@ -839,69 +799,43 @@ let EvaluationService = class EvaluationService {
         }
     }
     async seed() {
-        return await this.createAnimalFromUpload('BOI-TESTE-' + Math.floor(Math.random() * 1000), 'Nelore', ['https://via.placeholder.com/400', 'https://via.placeholder.com/400']);
-    }
-    async findOne(id) {
-        const evaluation = await this.evaluationRepository.findOne({
-            where: { id },
-            relations: ['animal', 'evaluator', 'mediaFiles'],
+        await this.createAnimalFromUpload('BR-2026-A', 'Nelore', ['https://placehold.co/600x400/000000/FFFFFF/png?text=Frontal'], {
+            farm: 'Fazenda Santa Fé',
+            client: 'Rodrigo Penso',
+            location: 'Goiás - GO',
+            collectionDate: new Date('2026-01-12'),
+            age: 36
         });
-        if (!evaluation) {
-            throw new common_1.NotFoundException(`Avaliação #${id} não encontrada.`);
-        }
-        return evaluation;
-    }
-    async findHistoryByAnimal(animalIdOrTag) {
-        const isId = !isNaN(Number(animalIdOrTag));
-        const query = this.evaluationRepository.createQueryBuilder('evaluation')
-            .leftJoinAndSelect('evaluation.animal', 'animal')
-            .leftJoinAndSelect('evaluation.mediaFiles', 'media')
-            .leftJoinAndSelect('evaluation.evaluator', 'evaluator');
-        if (isId) {
-            query.where('animal.id = :id', { id: animalIdOrTag });
-        }
-        else {
-            query.where('animal.tagCode = :tag', { tag: animalIdOrTag });
-        }
-        return await query.orderBy('evaluation.evaluationDate', 'DESC').getMany();
-    }
-    async update(id, updateDto) {
-        const { animalId, evaluatorId, ...dataToUpdate } = updateDto;
-        const evaluation = await this.findOne(id);
-        Object.assign(evaluation, dataToUpdate);
-        return await this.evaluationRepository.save(evaluation);
-    }
-    async remove(id) {
-        const evaluation = await this.findOne(id);
-        return await this.evaluationRepository.remove(evaluation);
-    }
-    async getDashboardStats() {
-        const totalAnimals = await this.animalRepository.count();
-        const totalEvaluations = await this.evaluationRepository.count();
-        const pendingList = await this.findPendingEvaluations();
-        const pending = pendingList.length;
-        const criticalCases = await this.evaluationRepository.count({
-            where: [
-                { toothFracture: (0, typeorm_2.MoreThanOrEqual)(4) },
-                { pulpitis: (0, typeorm_2.MoreThanOrEqual)(4) }
-            ]
+        return await this.createAnimalFromUpload('BR-2026-B', 'Angus', ['https://placehold.co/600x400/550000/FFFFFF/png?text=Frontal'], {
+            farm: 'Fazenda Ouro Verde',
+            client: 'Fabiano Araújo',
+            location: 'Nova Crixás - GO',
+            collectionDate: new Date('2026-01-14'),
+            age: 18
         });
-        return {
-            totalAnimals,
-            totalEvaluations,
-            pendingEvaluations: pending,
-            criticalCases,
-        };
+    }
+    async createDefaultHealthyTeeth(evaluation) {
+        const teethCodes = Object.values(dental_evaluation_enums_1.ToothCode);
+        const teethEntities = teethCodes.map(code => this.toothRepository.create({
+            evaluation,
+            toothCode: code,
+            toothType: dental_evaluation_enums_1.ToothType.PERMANENT,
+            fractureLevel: dental_evaluation_enums_1.SeverityScale.NONE,
+            isPresent: true
+        }));
+        await this.toothRepository.save(teethEntities);
     }
 };
 exports.EvaluationService = EvaluationService;
 exports.EvaluationService = EvaluationService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, typeorm_1.InjectRepository)(dental_evaluation_entity_1.DentalEvaluation)),
-    __param(1, (0, typeorm_1.InjectRepository)(animal_entity_1.Animal)),
-    __param(2, (0, typeorm_1.InjectRepository)(user_entity_1.User)),
-    __param(3, (0, typeorm_1.InjectRepository)(media_entity_1.Media)),
+    __param(1, (0, typeorm_1.InjectRepository)(tooth_evaluation_entity_1.ToothEvaluation)),
+    __param(2, (0, typeorm_1.InjectRepository)(animal_entity_1.Animal)),
+    __param(3, (0, typeorm_1.InjectRepository)(user_entity_1.User)),
+    __param(4, (0, typeorm_1.InjectRepository)(media_entity_1.Media)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
+        typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository,
@@ -936,15 +870,20 @@ const media_entity_1 = __webpack_require__(/*! ./media.entity */ "./libs/data/sr
 let Animal = class Animal {
     id;
     tagCode;
-    animalIdentifier;
     breed;
+    age;
+    farm;
+    client;
+    location;
+    collectionDate;
+    animalIdentifier;
     ageInMonths;
     generalStatus;
     registrationDate;
     dentalEvaluations;
     mediaFiles;
     static _OPENAPI_METADATA_FACTORY() {
-        return { id: { required: true, type: () => Number }, tagCode: { required: true, type: () => String }, animalIdentifier: { required: true, type: () => String }, breed: { required: true, type: () => String }, ageInMonths: { required: true, type: () => Number }, generalStatus: { required: true, type: () => String }, registrationDate: { required: true, type: () => Date }, dentalEvaluations: { required: true, type: () => [(__webpack_require__(/*! ./libs/data/src/entities/dental-evaluation.entity */ "./libs/data/src/entities/dental-evaluation.entity.ts").DentalEvaluation)] }, mediaFiles: { required: true, type: () => [(__webpack_require__(/*! ./libs/data/src/entities/media.entity */ "./libs/data/src/entities/media.entity.ts").Media)] } };
+        return { id: { required: true, type: () => Number }, tagCode: { required: true, type: () => String }, breed: { required: true, type: () => String }, age: { required: true, type: () => Number }, farm: { required: true, type: () => String }, client: { required: true, type: () => String }, location: { required: true, type: () => String }, collectionDate: { required: true, type: () => Date }, animalIdentifier: { required: true, type: () => String }, ageInMonths: { required: true, type: () => Number }, generalStatus: { required: true, type: () => String }, registrationDate: { required: true, type: () => Date }, dentalEvaluations: { required: true, type: () => [(__webpack_require__(/*! ./libs/data/src/entities/dental-evaluation.entity */ "./libs/data/src/entities/dental-evaluation.entity.ts").DentalEvaluation)] }, mediaFiles: { required: true, type: () => [(__webpack_require__(/*! ./libs/data/src/entities/media.entity */ "./libs/data/src/entities/media.entity.ts").Media)] } };
     }
 };
 exports.Animal = Animal;
@@ -953,17 +892,37 @@ __decorate([
     __metadata("design:type", Number)
 ], Animal.prototype, "id", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ name: 'tag_code' }),
+    (0, typeorm_1.Column)({ name: 'tag_code', unique: true }),
     __metadata("design:type", String)
 ], Animal.prototype, "tagCode", void 0);
-__decorate([
-    (0, typeorm_1.Column)({ name: 'animal_identifier', nullable: true }),
-    __metadata("design:type", String)
-], Animal.prototype, "animalIdentifier", void 0);
 __decorate([
     (0, typeorm_1.Column)(),
     __metadata("design:type", String)
 ], Animal.prototype, "breed", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true }),
+    __metadata("design:type", Number)
+], Animal.prototype, "age", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true }),
+    __metadata("design:type", String)
+], Animal.prototype, "farm", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true }),
+    __metadata("design:type", String)
+], Animal.prototype, "client", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true }),
+    __metadata("design:type", String)
+], Animal.prototype, "location", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'collection_date', type: 'timestamp', nullable: true }),
+    __metadata("design:type", Date)
+], Animal.prototype, "collectionDate", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'animal_identifier', nullable: true }),
+    __metadata("design:type", String)
+], Animal.prototype, "animalIdentifier", void 0);
 __decorate([
     (0, typeorm_1.Column)({ name: 'age_in_months', nullable: true }),
     __metadata("design:type", Number)
@@ -1014,6 +973,7 @@ const typeorm_1 = __webpack_require__(/*! typeorm */ "typeorm");
 const animal_entity_1 = __webpack_require__(/*! ./animal.entity */ "./libs/data/src/entities/animal.entity.ts");
 const user_entity_1 = __webpack_require__(/*! ./user.entity */ "./libs/data/src/entities/user.entity.ts");
 const media_entity_1 = __webpack_require__(/*! ./media.entity */ "./libs/data/src/entities/media.entity.ts");
+const tooth_evaluation_entity_1 = __webpack_require__(/*! ./tooth-evaluation.entity */ "./libs/data/src/entities/tooth-evaluation.entity.ts");
 let DentalEvaluation = class DentalEvaluation {
     id;
     animal;
@@ -1021,24 +981,12 @@ let DentalEvaluation = class DentalEvaluation {
     evaluator;
     evaluatorUserId;
     mediaFiles;
+    teeth;
     evaluationDate;
     generalObservations;
-    toothPresence;
-    toothFracture;
-    crownReduction;
-    vitrifiedBorder;
-    lingualWear;
-    pulpitis;
-    pulpChamberExposure;
-    dentalCalculus;
-    abnormalColor;
-    caries;
-    gingivalRecession;
-    periodontalLesions;
-    gingivitisEdema;
-    gingivitisColor;
+    generalGingivitisScore;
     static _OPENAPI_METADATA_FACTORY() {
-        return { id: { required: true, type: () => Number }, animal: { required: true, type: () => (__webpack_require__(/*! ./libs/data/src/entities/animal.entity */ "./libs/data/src/entities/animal.entity.ts").Animal) }, animalId: { required: true, type: () => Number }, evaluator: { required: true, type: () => (__webpack_require__(/*! ./libs/data/src/entities/user.entity */ "./libs/data/src/entities/user.entity.ts").User) }, evaluatorUserId: { required: true, type: () => String }, mediaFiles: { required: true, type: () => [(__webpack_require__(/*! ./libs/data/src/entities/media.entity */ "./libs/data/src/entities/media.entity.ts").Media)] }, evaluationDate: { required: true, type: () => Date }, generalObservations: { required: true, type: () => String }, toothPresence: { required: true, type: () => Boolean }, toothFracture: { required: true, type: () => Number }, crownReduction: { required: true, type: () => Number }, vitrifiedBorder: { required: true, type: () => Number }, lingualWear: { required: true, type: () => Number }, pulpitis: { required: true, type: () => Number }, pulpChamberExposure: { required: true, type: () => Number }, dentalCalculus: { required: true, type: () => Number }, abnormalColor: { required: true, type: () => Number }, caries: { required: true, type: () => Number }, gingivalRecession: { required: true, type: () => Number }, periodontalLesions: { required: true, type: () => Number }, gingivitisEdema: { required: true, type: () => Number }, gingivitisColor: { required: true, type: () => Number } };
+        return { id: { required: true, type: () => Number }, animal: { required: true, type: () => (__webpack_require__(/*! ./libs/data/src/entities/animal.entity */ "./libs/data/src/entities/animal.entity.ts").Animal) }, animalId: { required: true, type: () => Number }, evaluator: { required: true, type: () => (__webpack_require__(/*! ./libs/data/src/entities/user.entity */ "./libs/data/src/entities/user.entity.ts").User) }, evaluatorUserId: { required: true, type: () => String }, mediaFiles: { required: true, type: () => [(__webpack_require__(/*! ./libs/data/src/entities/media.entity */ "./libs/data/src/entities/media.entity.ts").Media)] }, teeth: { required: true, type: () => [(__webpack_require__(/*! ./libs/data/src/entities/tooth-evaluation.entity */ "./libs/data/src/entities/tooth-evaluation.entity.ts").ToothEvaluation)] }, evaluationDate: { required: true, type: () => Date }, generalObservations: { required: true, type: () => String }, generalGingivitisScore: { required: true, type: () => Number } };
     }
 };
 exports.DentalEvaluation = DentalEvaluation;
@@ -1076,6 +1024,12 @@ __decorate([
     __metadata("design:type", Array)
 ], DentalEvaluation.prototype, "mediaFiles", void 0);
 __decorate([
+    (0, typeorm_1.OneToMany)(() => tooth_evaluation_entity_1.ToothEvaluation, (tooth) => tooth.evaluation, {
+        cascade: true
+    }),
+    __metadata("design:type", Array)
+], DentalEvaluation.prototype, "teeth", void 0);
+__decorate([
     (0, typeorm_1.CreateDateColumn)({ name: 'evaluation_date' }),
     __metadata("design:type", Date)
 ], DentalEvaluation.prototype, "evaluationDate", void 0);
@@ -1084,61 +1038,9 @@ __decorate([
     __metadata("design:type", String)
 ], DentalEvaluation.prototype, "generalObservations", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ name: 'tooth_presence', default: true }),
-    __metadata("design:type", Boolean)
-], DentalEvaluation.prototype, "toothPresence", void 0);
-__decorate([
-    (0, typeorm_1.Column)({ name: 'tooth_fracture', type: 'int', default: 0 }),
+    (0, typeorm_1.Column)({ name: 'general_gingivitis_score', type: 'int', default: 0 }),
     __metadata("design:type", Number)
-], DentalEvaluation.prototype, "toothFracture", void 0);
-__decorate([
-    (0, typeorm_1.Column)({ name: 'crown_reduction', type: 'int', default: 0 }),
-    __metadata("design:type", Number)
-], DentalEvaluation.prototype, "crownReduction", void 0);
-__decorate([
-    (0, typeorm_1.Column)({ name: 'vitrified_border', type: 'int', default: 0 }),
-    __metadata("design:type", Number)
-], DentalEvaluation.prototype, "vitrifiedBorder", void 0);
-__decorate([
-    (0, typeorm_1.Column)({ name: 'lingual_wear', type: 'int', default: 0 }),
-    __metadata("design:type", Number)
-], DentalEvaluation.prototype, "lingualWear", void 0);
-__decorate([
-    (0, typeorm_1.Column)({ name: 'pulpitis', type: 'int', default: 0 }),
-    __metadata("design:type", Number)
-], DentalEvaluation.prototype, "pulpitis", void 0);
-__decorate([
-    (0, typeorm_1.Column)({ name: 'pulp_chamber_exposure', type: 'int', default: 0 }),
-    __metadata("design:type", Number)
-], DentalEvaluation.prototype, "pulpChamberExposure", void 0);
-__decorate([
-    (0, typeorm_1.Column)({ name: 'dental_calculus', type: 'int', default: 0 }),
-    __metadata("design:type", Number)
-], DentalEvaluation.prototype, "dentalCalculus", void 0);
-__decorate([
-    (0, typeorm_1.Column)({ name: 'abnormal_color', type: 'int', default: 0 }),
-    __metadata("design:type", Number)
-], DentalEvaluation.prototype, "abnormalColor", void 0);
-__decorate([
-    (0, typeorm_1.Column)({ name: 'caries', type: 'int', default: 0 }),
-    __metadata("design:type", Number)
-], DentalEvaluation.prototype, "caries", void 0);
-__decorate([
-    (0, typeorm_1.Column)({ name: 'gingival_recession', type: 'int', default: 0 }),
-    __metadata("design:type", Number)
-], DentalEvaluation.prototype, "gingivalRecession", void 0);
-__decorate([
-    (0, typeorm_1.Column)({ name: 'periodontal_lesions', type: 'int', default: 0 }),
-    __metadata("design:type", Number)
-], DentalEvaluation.prototype, "periodontalLesions", void 0);
-__decorate([
-    (0, typeorm_1.Column)({ name: 'gingivitis_edema', type: 'int', default: 0 }),
-    __metadata("design:type", Number)
-], DentalEvaluation.prototype, "gingivitisEdema", void 0);
-__decorate([
-    (0, typeorm_1.Column)({ name: 'gingivitis_color', type: 'int', default: 0 }),
-    __metadata("design:type", Number)
-], DentalEvaluation.prototype, "gingivitisColor", void 0);
+], DentalEvaluation.prototype, "generalGingivitisScore", void 0);
 exports.DentalEvaluation = DentalEvaluation = __decorate([
     (0, typeorm_1.Entity)('dental_evaluation')
 ], DentalEvaluation);
@@ -1204,7 +1106,7 @@ __decorate([
     __metadata("design:type", Date)
 ], Media.prototype, "uploadDate", void 0);
 __decorate([
-    (0, typeorm_1.ManyToOne)(() => animal_entity_1.Animal, (animal) => animal.mediaFiles),
+    (0, typeorm_1.ManyToOne)(() => animal_entity_1.Animal, (animal) => animal.mediaFiles, { onDelete: 'CASCADE' }),
     (0, typeorm_1.JoinColumn)({ name: 'animal_id' }),
     __metadata("design:type", animal_entity_1.Animal)
 ], Media.prototype, "animal", void 0);
@@ -1219,6 +1121,146 @@ __decorate([
 exports.Media = Media = __decorate([
     (0, typeorm_1.Entity)('media')
 ], Media);
+
+
+/***/ }),
+
+/***/ "./libs/data/src/entities/tooth-evaluation.entity.ts":
+/*!***********************************************************!*\
+  !*** ./libs/data/src/entities/tooth-evaluation.entity.ts ***!
+  \***********************************************************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.ToothEvaluation = void 0;
+const openapi = __webpack_require__(/*! @nestjs/swagger */ "@nestjs/swagger");
+const typeorm_1 = __webpack_require__(/*! typeorm */ "typeorm");
+const dental_evaluation_entity_1 = __webpack_require__(/*! ./dental-evaluation.entity */ "./libs/data/src/entities/dental-evaluation.entity.ts");
+const dental_evaluation_enums_1 = __webpack_require__(/*! ../enums/dental-evaluation.enums */ "./libs/data/src/enums/dental-evaluation.enums.ts");
+let ToothEvaluation = class ToothEvaluation {
+    id;
+    toothCode;
+    toothType;
+    isPresent;
+    crownReductionLevel;
+    lingualWear;
+    gingivalRecessionLevel;
+    periodontalLesions;
+    fractureLevel;
+    pulpitis;
+    vitrifiedBorder;
+    pulpChamberExposure;
+    gingivitisEdema;
+    gingivitisColor;
+    dentalCalculus;
+    abnormalColor;
+    caries;
+    evaluation;
+    evaluationId;
+    static _OPENAPI_METADATA_FACTORY() {
+        return { id: { required: true, type: () => Number }, toothCode: { required: true, enum: (__webpack_require__(/*! ./libs/data/src/enums/dental-evaluation.enums */ "./libs/data/src/enums/dental-evaluation.enums.ts").ToothCode) }, toothType: { required: true, enum: (__webpack_require__(/*! ./libs/data/src/enums/dental-evaluation.enums */ "./libs/data/src/enums/dental-evaluation.enums.ts").ToothType) }, isPresent: { required: true, type: () => Boolean }, crownReductionLevel: { required: true, type: () => Number }, lingualWear: { required: true, enum: (__webpack_require__(/*! ./libs/data/src/enums/dental-evaluation.enums */ "./libs/data/src/enums/dental-evaluation.enums.ts").SeverityScale) }, gingivalRecessionLevel: { required: true, type: () => Number }, periodontalLesions: { required: true, enum: (__webpack_require__(/*! ./libs/data/src/enums/dental-evaluation.enums */ "./libs/data/src/enums/dental-evaluation.enums.ts").SeverityScale) }, fractureLevel: { required: true, enum: (__webpack_require__(/*! ./libs/data/src/enums/dental-evaluation.enums */ "./libs/data/src/enums/dental-evaluation.enums.ts").SeverityScale) }, pulpitis: { required: true, enum: (__webpack_require__(/*! ./libs/data/src/enums/dental-evaluation.enums */ "./libs/data/src/enums/dental-evaluation.enums.ts").SeverityScale) }, vitrifiedBorder: { required: true, enum: (__webpack_require__(/*! ./libs/data/src/enums/dental-evaluation.enums */ "./libs/data/src/enums/dental-evaluation.enums.ts").SeverityScale) }, pulpChamberExposure: { required: true, enum: (__webpack_require__(/*! ./libs/data/src/enums/dental-evaluation.enums */ "./libs/data/src/enums/dental-evaluation.enums.ts").SeverityScale) }, gingivitisEdema: { required: true, enum: (__webpack_require__(/*! ./libs/data/src/enums/dental-evaluation.enums */ "./libs/data/src/enums/dental-evaluation.enums.ts").SeverityScale) }, gingivitisColor: { required: true, type: () => Number }, dentalCalculus: { required: true, enum: (__webpack_require__(/*! ./libs/data/src/enums/dental-evaluation.enums */ "./libs/data/src/enums/dental-evaluation.enums.ts").SeverityScale) }, abnormalColor: { required: true, type: () => Number }, caries: { required: true, enum: (__webpack_require__(/*! ./libs/data/src/enums/dental-evaluation.enums */ "./libs/data/src/enums/dental-evaluation.enums.ts").SeverityScale) }, evaluation: { required: true, type: () => (__webpack_require__(/*! ./libs/data/src/entities/dental-evaluation.entity */ "./libs/data/src/entities/dental-evaluation.entity.ts").DentalEvaluation) }, evaluationId: { required: true, type: () => Number } };
+    }
+};
+exports.ToothEvaluation = ToothEvaluation;
+__decorate([
+    (0, typeorm_1.PrimaryGeneratedColumn)('increment'),
+    __metadata("design:type", Number)
+], ToothEvaluation.prototype, "id", void 0);
+__decorate([
+    (0, typeorm_1.Column)({
+        type: 'simple-enum',
+        enum: dental_evaluation_enums_1.ToothCode,
+        name: 'tooth_code'
+    }),
+    __metadata("design:type", String)
+], ToothEvaluation.prototype, "toothCode", void 0);
+__decorate([
+    (0, typeorm_1.Column)({
+        type: 'simple-enum',
+        enum: dental_evaluation_enums_1.ToothType,
+        default: dental_evaluation_enums_1.ToothType.PERMANENT,
+        name: 'tooth_type'
+    }),
+    __metadata("design:type", String)
+], ToothEvaluation.prototype, "toothType", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'is_present', default: true }),
+    __metadata("design:type", Boolean)
+], ToothEvaluation.prototype, "isPresent", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'crown_reduction_level', type: 'int', default: dental_evaluation_enums_1.SeverityScale.NONE }),
+    __metadata("design:type", Number)
+], ToothEvaluation.prototype, "crownReductionLevel", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'lingual_wear', type: 'int', default: dental_evaluation_enums_1.SeverityScale.NONE }),
+    __metadata("design:type", Number)
+], ToothEvaluation.prototype, "lingualWear", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'gingival_recession_level', type: 'int', default: dental_evaluation_enums_1.SeverityScale.NONE }),
+    __metadata("design:type", Number)
+], ToothEvaluation.prototype, "gingivalRecessionLevel", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'periodontal_lesions', type: 'int', default: dental_evaluation_enums_1.SeverityScale.NONE }),
+    __metadata("design:type", Number)
+], ToothEvaluation.prototype, "periodontalLesions", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'fracture_level', type: 'int', default: dental_evaluation_enums_1.SeverityScale.NONE }),
+    __metadata("design:type", Number)
+], ToothEvaluation.prototype, "fractureLevel", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'pulpitis', type: 'int', default: dental_evaluation_enums_1.SeverityScale.NONE }),
+    __metadata("design:type", Number)
+], ToothEvaluation.prototype, "pulpitis", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'vitrified_border', type: 'int', default: dental_evaluation_enums_1.SeverityScale.NONE }),
+    __metadata("design:type", Number)
+], ToothEvaluation.prototype, "vitrifiedBorder", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'pulp_chamber_exposure', type: 'int', default: dental_evaluation_enums_1.SeverityScale.NONE }),
+    __metadata("design:type", Number)
+], ToothEvaluation.prototype, "pulpChamberExposure", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'gingivitis_edema', type: 'int', default: dental_evaluation_enums_1.SeverityScale.NONE }),
+    __metadata("design:type", Number)
+], ToothEvaluation.prototype, "gingivitisEdema", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'gingivitis_color', type: 'int', default: dental_evaluation_enums_1.ColorScale.NORMAL }),
+    __metadata("design:type", Number)
+], ToothEvaluation.prototype, "gingivitisColor", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'dental_calculus', type: 'int', default: dental_evaluation_enums_1.SeverityScale.NONE }),
+    __metadata("design:type", Number)
+], ToothEvaluation.prototype, "dentalCalculus", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'abnormal_color', type: 'int', default: dental_evaluation_enums_1.ColorScale.NORMAL }),
+    __metadata("design:type", Number)
+], ToothEvaluation.prototype, "abnormalColor", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'caries', type: 'int', default: dental_evaluation_enums_1.SeverityScale.NONE }),
+    __metadata("design:type", Number)
+], ToothEvaluation.prototype, "caries", void 0);
+__decorate([
+    (0, typeorm_1.ManyToOne)(() => dental_evaluation_entity_1.DentalEvaluation, (evaluation) => evaluation.teeth, { onDelete: 'CASCADE' }),
+    (0, typeorm_1.JoinColumn)({ name: 'dental_evaluation_id' }),
+    __metadata("design:type", dental_evaluation_entity_1.DentalEvaluation)
+], ToothEvaluation.prototype, "evaluation", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'dental_evaluation_id' }),
+    __metadata("design:type", Number)
+], ToothEvaluation.prototype, "evaluationId", void 0);
+exports.ToothEvaluation = ToothEvaluation = __decorate([
+    (0, typeorm_1.Entity)('tooth_evaluation')
+], ToothEvaluation);
 
 
 /***/ }),
@@ -1247,24 +1289,34 @@ let User = class User {
     id;
     fullName;
     email;
+    password;
+    role;
     registrationDate;
     static _OPENAPI_METADATA_FACTORY() {
-        return { id: { required: true, type: () => String }, fullName: { required: true, type: () => String }, email: { required: true, type: () => String }, registrationDate: { required: true, type: () => Date } };
+        return { id: { required: true, type: () => Number }, fullName: { required: true, type: () => String }, email: { required: true, type: () => String }, password: { required: true, type: () => String }, role: { required: true, type: () => String }, registrationDate: { required: true, type: () => Date } };
     }
 };
 exports.User = User;
 __decorate([
-    (0, typeorm_1.PrimaryGeneratedColumn)('uuid'),
-    __metadata("design:type", String)
+    (0, typeorm_1.PrimaryGeneratedColumn)('increment'),
+    __metadata("design:type", Number)
 ], User.prototype, "id", void 0);
 __decorate([
     (0, typeorm_1.Column)({ name: 'full_name' }),
     __metadata("design:type", String)
 ], User.prototype, "fullName", void 0);
 __decorate([
-    (0, typeorm_1.Column)(),
+    (0, typeorm_1.Column)({ unique: true }),
     __metadata("design:type", String)
 ], User.prototype, "email", void 0);
+__decorate([
+    (0, typeorm_1.Column)(),
+    __metadata("design:type", String)
+], User.prototype, "password", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ default: 'user' }),
+    __metadata("design:type", String)
+], User.prototype, "role", void 0);
 __decorate([
     (0, typeorm_1.CreateDateColumn)({ name: 'registration_date' }),
     __metadata("design:type", Date)
@@ -1284,35 +1336,46 @@ exports.User = User = __decorate([
 
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.PhotoType = exports.GeneralHealthStatus = exports.SeverityLevel = exports.FractureLevel = void 0;
-var FractureLevel;
-(function (FractureLevel) {
-    FractureLevel["NONE"] = "NONE";
-    FractureLevel["ENAMEL"] = "ENAMEL";
-    FractureLevel["DENTINE"] = "DENTINE";
-    FractureLevel["PULP"] = "PULP";
-})(FractureLevel || (exports.FractureLevel = FractureLevel = {}));
-var SeverityLevel;
-(function (SeverityLevel) {
-    SeverityLevel["ABSENT"] = "ABSENT";
-    SeverityLevel["MILD"] = "MILD";
-    SeverityLevel["MODERATE"] = "MODERATE";
-    SeverityLevel["SEVERE"] = "SEVERE";
-})(SeverityLevel || (exports.SeverityLevel = SeverityLevel = {}));
-var GeneralHealthStatus;
-(function (GeneralHealthStatus) {
-    GeneralHealthStatus["EXCELLENT"] = "EXCELLENT";
-    GeneralHealthStatus["GOOD"] = "GOOD";
-    GeneralHealthStatus["REGULAR"] = "REGULAR";
-    GeneralHealthStatus["POOR"] = "POOR";
-    GeneralHealthStatus["CRITICAL"] = "CRITICAL";
-})(GeneralHealthStatus || (exports.GeneralHealthStatus = GeneralHealthStatus = {}));
+exports.PhotoType = exports.ToothCode = exports.BinaryStatus = exports.ToothType = exports.ColorScale = exports.SeverityScale = void 0;
+var SeverityScale;
+(function (SeverityScale) {
+    SeverityScale[SeverityScale["NONE"] = 0] = "NONE";
+    SeverityScale[SeverityScale["MODERATE"] = 1] = "MODERATE";
+    SeverityScale[SeverityScale["SEVERE"] = 2] = "SEVERE";
+})(SeverityScale || (exports.SeverityScale = SeverityScale = {}));
+var ColorScale;
+(function (ColorScale) {
+    ColorScale[ColorScale["NORMAL"] = 0] = "NORMAL";
+    ColorScale[ColorScale["ALTERED"] = 1] = "ALTERED";
+})(ColorScale || (exports.ColorScale = ColorScale = {}));
+var ToothType;
+(function (ToothType) {
+    ToothType["DECIDUOUS"] = "DECIDUOUS";
+    ToothType["PERMANENT"] = "PERMANENT";
+})(ToothType || (exports.ToothType = ToothType = {}));
+var BinaryStatus;
+(function (BinaryStatus) {
+    BinaryStatus[BinaryStatus["ABSENT"] = 0] = "ABSENT";
+    BinaryStatus[BinaryStatus["PRESENT"] = 1] = "PRESENT";
+})(BinaryStatus || (exports.BinaryStatus = BinaryStatus = {}));
+var ToothCode;
+(function (ToothCode) {
+    ToothCode["I1_LEFT"] = "I1_L";
+    ToothCode["I1_RIGHT"] = "I1_R";
+    ToothCode["I2_LEFT"] = "I2_L";
+    ToothCode["I2_RIGHT"] = "I2_R";
+    ToothCode["I3_LEFT"] = "I3_L";
+    ToothCode["I3_RIGHT"] = "I3_R";
+    ToothCode["I4_LEFT"] = "I4_L";
+    ToothCode["I4_RIGHT"] = "I4_R";
+})(ToothCode || (exports.ToothCode = ToothCode = {}));
 var PhotoType;
 (function (PhotoType) {
     PhotoType["FRONTAL"] = "FRONTAL";
-    PhotoType["VESTIBULAR"] = "VESTIBULAR";
+    PhotoType["LINGUAL"] = "LINGUAL";
     PhotoType["LATERAL_LEFT"] = "LATERAL_LEFT";
     PhotoType["LATERAL_RIGHT"] = "LATERAL_RIGHT";
+    PhotoType["SUPERIOR"] = "SUPERIOR";
 })(PhotoType || (exports.PhotoType = PhotoType = {}));
 
 
@@ -1345,16 +1408,6 @@ module.exports = require("@nestjs/config");
 /***/ ((module) => {
 
 module.exports = require("@nestjs/core");
-
-/***/ }),
-
-/***/ "@nestjs/mapped-types":
-/*!***************************************!*\
-  !*** external "@nestjs/mapped-types" ***!
-  \***************************************/
-/***/ ((module) => {
-
-module.exports = require("@nestjs/mapped-types");
 
 /***/ }),
 
@@ -1479,7 +1532,12 @@ const app_module_1 = __webpack_require__(/*! ./app.module */ "./apps/admin/src/a
 const swagger_1 = __webpack_require__(/*! @nestjs/swagger */ "@nestjs/swagger");
 async function bootstrap() {
     const app = await core_1.NestFactory.create(app_module_1.AppModule);
-    app.enableCors();
+    app.enableCors({
+        origin: true,
+        methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+        credentials: true,
+    });
+    app.setGlobalPrefix('api');
     const config = new swagger_1.DocumentBuilder()
         .setTitle('AnimalTools Admin API')
         .setDescription('API para gestão de avaliações de saúde bucal bovina')
@@ -1487,9 +1545,9 @@ async function bootstrap() {
         .build();
     const document = swagger_1.SwaggerModule.createDocument(app, config);
     swagger_1.SwaggerModule.setup('api', app, document);
-    await app.listen(3000);
-    console.log('API Admin rodando em http://localhost:3000');
-    console.log('Swagger disponível em http://localhost:3000/api');
+    await app.listen(3333);
+    console.log('API Admin rodando em http://localhost:3333');
+    console.log('Swagger disponível em http://localhost:3333/api');
 }
 bootstrap();
 
