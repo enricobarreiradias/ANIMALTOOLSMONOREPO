@@ -12,7 +12,7 @@ export const theme = createTheme({
       main: '#64748B', // Slate Grey
     },
     background: {
-      default: '#F1F5F9', // Cinza suave
+      default: '#f8fafc', // Cinza suave
       paper: '#FFFFFF',
     },
     text: {

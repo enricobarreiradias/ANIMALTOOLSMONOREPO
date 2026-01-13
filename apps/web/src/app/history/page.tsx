@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'; 
 import { useRouter } from 'next/navigation';
 import { 
-  Box, Container, Typography, Paper, Table, TableBody, TableCell, 
+  Box, Typography, Paper, Table, TableBody, TableCell, 
   TableContainer, TableHead, TableRow, TablePagination, 
   TextField, InputAdornment, Chip, Button, Avatar, CircularProgress, 
   Stack, Alert, IconButton, Tooltip
@@ -79,7 +79,7 @@ export default function HistoryPage() {
   );
 
   return (
-    <Container maxWidth="xl" sx={{ py: 4 }}>
+    <Box sx={{ p: 4, width: '100%' }}>
       
       <Box mb={4} display="flex" justifyContent="space-between" alignItems="center">
         <Box>
@@ -234,6 +234,6 @@ export default function HistoryPage() {
             </>
         )}
       </TableContainer>
-    </Container>
+    </Box>
   );
 }

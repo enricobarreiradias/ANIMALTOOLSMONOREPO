@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
-  Box, Container, Typography, Paper, Table, TableBody, TableCell, 
+  Box, Typography, Paper, Table, TableBody, TableCell, 
   TableContainer, TableHead, TableRow, TablePagination, 
   TextField, InputAdornment, MenuItem, Select, FormControl, InputLabel, 
   Chip, Button, Avatar, CircularProgress, 
@@ -79,7 +79,7 @@ export default function PendingEvaluationsPage() {
   const uniqueClients = Array.from(new Set(animals.map(a => a.client).filter(Boolean)));
 
   return (
-    <Container maxWidth="xl" sx={{ py: 4 }}>
+    <Box sx={{ p: 3, width: '100%' }}>
       <Box mb={4} display="flex" flexDirection={{ xs: 'column', md: 'row' }} justifyContent="space-between" alignItems="center" gap={2}>
         <Box>
             <Typography variant="h4" fontWeight={800} color="primary" gutterBottom>Mesa de Avaliação</Typography>
@@ -170,6 +170,6 @@ export default function PendingEvaluationsPage() {
             </>
         )}
       </TableContainer>
-    </Container>
+    </Box>
   );
 }
