@@ -1,12 +1,20 @@
-// Copia fiel dos Enums do Backend para garantir compatibilidade
+// apps/web/src/types/dental.ts
 
+// ALINHADO COM A DECISÃO DE 06/01/2026: Escala simplificada de 3 níveis
 export enum SeverityScale {
-  NONE = 0,          // Saudável
-  VERY_MILD = 1,     // Muito Leve
-  MILD = 2,          // Leve
-  MODERATE = 3,      // Moderado
-  SEVERE = 4,        // Severo
-  VERY_SEVERE = 5    // Muito Severo
+  NONE = 0,      // Saudável / Normal
+  MODERATE = 1,  // Moderado / Atenção
+  SEVERE = 2     // Crítico / Severo
+}
+
+export enum ColorScale {
+  NORMAL = 0,
+  ALTERED = 1
+}
+
+export enum ToothType {
+  DECIDUOUS = 'DECIDUOUS', // Dente de Leite
+  PERMANENT = 'PERMANENT'  // Dente Permanente
 }
 
 export enum ToothCode {
@@ -22,17 +30,34 @@ export enum ToothCode {
 
 export interface ToothEvaluationData {
   toothCode: ToothCode;
+  
+  // Parâmetros Críticos e Visuais
   fractureLevel: SeverityScale;
-  lingualWear: SeverityScale;
-  crownReductionMm?: number;
-  gingivalRecessionMm?: number;
   pulpitis: SeverityScale;
+  gingivalRecessionLevel: SeverityScale; 
+  crownReductionLevel: SeverityScale;    
+  
+  // Outros Indicadores
+  lingualWear: SeverityScale;
+  periodontalLesions: SeverityScale;
+  vitrifiedBorder: SeverityScale;
+  pulpChamberExposure: SeverityScale;
+  gingivitisEdema: SeverityScale;
+  dentalCalculus: SeverityScale;
+  caries: SeverityScale;
+
+  // Cores
+  gingivitisColor: ColorScale;
+  abnormalColor: ColorScale;
+
+  // Metadados
+  toothType: ToothType;
   isPresent: boolean;
 }
 
 export interface EvaluationPayload {
-  animalId: number;
-  evaluatorId: string; // UUID
+  animalId: string | number;
+  evaluatorId: string | number;
   notes: string;
   teeth: ToothEvaluationData[];
 }
