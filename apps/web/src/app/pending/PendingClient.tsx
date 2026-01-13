@@ -22,7 +22,7 @@ interface ApiAnimalResponse {
   entryDate?: string;
 }
 
-export default function PendingEvaluationsPage() {
+export default function PendingClient() {
   const router = useRouter();
   
   const [animals, setAnimals] = useState<ApiAnimalResponse[]>([]);
@@ -44,8 +44,8 @@ export default function PendingEvaluationsPage() {
     setLoading(true);
     try {
       const response = await EvaluationService.getPending();
-
-      setAnimals(response.data);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      setAnimals(response.data as any);
     } catch (err) {
       console.error(err);
       setError('Falha ao carregar lista de animais pendentes.');
@@ -73,8 +73,7 @@ export default function PendingEvaluationsPage() {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
   };
-  const handleEvaluate = (id: string) => { router.push(`/evaluate/${id}`); };
-
+  
   const uniqueFarms = Array.from(new Set(animals.map(a => a.farm).filter(Boolean)));
   const uniqueClients = Array.from(new Set(animals.map(a => a.client).filter(Boolean)));
 
@@ -102,10 +101,10 @@ export default function PendingEvaluationsPage() {
 
       <Paper elevation={1} sx={{ p: 2, mb: 3, borderRadius: 2 }}>
         <Grid container spacing={2} alignItems="center">
-            <Grid size={{ xs: 12, md: 4 }}>
+            <Grid item xs={12} md={4}>
                 <TextField fullWidth placeholder="Buscar por brinco / ID..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} InputProps={{ startAdornment: (<InputAdornment position="start"><Search color="action" /></InputAdornment>) }} size="small" />
             </Grid>
-            <Grid size={{ xs: 6, md: 3 }}>
+            <Grid item xs={6} md={3}>
                 <FormControl fullWidth size="small">
                     <InputLabel>Filtrar Fazenda</InputLabel>
                     <Select value={filterFarm} label="Filtrar Fazenda" onChange={(e) => setFilterFarm(e.target.value)}>
@@ -114,7 +113,7 @@ export default function PendingEvaluationsPage() {
                     </Select>
                 </FormControl>
             </Grid>
-            <Grid size={{ xs: 6, md: 3 }}>
+            <Grid item xs={6} md={3}>
                 <FormControl fullWidth size="small">
                     <InputLabel>Filtrar Cliente</InputLabel>
                     <Select value={filterClient} label="Filtrar Cliente" onChange={(e) => setFilterClient(e.target.value)}>
@@ -123,7 +122,7 @@ export default function PendingEvaluationsPage() {
                     </Select>
                 </FormControl>
             </Grid>
-            <Grid size={{ xs: 12, md: 2 }}>
+            <Grid item xs={12} md={2}>
                  <Button fullWidth variant="outlined" onClick={() => {setSearchTerm(''); setFilterFarm('all'); setFilterClient('all')}} startIcon={<FilterList />} color="inherit">Limpar</Button>
             </Grid>
         </Grid>
@@ -153,11 +152,10 @@ export default function PendingEvaluationsPage() {
                                         <Typography variant="caption" color="text.secondary">Entrada: {row.entryDate || '-'}</Typography>
                                     </TableCell>
                                     <TableCell><Chip label={row.breed} size="small" variant="outlined" /></TableCell>
-                                    {/* Exibe o dado real ou um placeholder se vier vazio */}
                                     <TableCell>{row.farm || 'Não informada'}</TableCell>
                                     <TableCell>{row.client || 'Não informado'}</TableCell>
                                     <TableCell align="center">
-                                        <Button variant="contained" color="primary" endIcon={<ArrowForward />} onClick={() => handleEvaluate(row.id)} size="small" sx={{ borderRadius: 20, px: 3 }}>Avaliar</Button>
+                                        <Button variant="contained" color="primary" endIcon={<ArrowForward />} onClick={() => router.push(`/evaluate/${row.id}`)} size="small" sx={{ borderRadius: 20, px: 3 }}>Avaliar</Button>
                                     </TableCell>
                                 </TableRow>
                             ))

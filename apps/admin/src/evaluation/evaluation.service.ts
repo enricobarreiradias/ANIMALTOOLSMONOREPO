@@ -7,7 +7,6 @@ import { ToothEvaluation } from '@app/data/entities/tooth-evaluation.entity';
 import { Animal } from '@app/data/entities/animal.entity';
 import { User } from '@app/data/entities/user.entity';
 import { Media } from '@app/data/entities/media.entity'; 
-// ATUALIZADO: Adicionados ColorScale e ToothType
 import { PhotoType, SeverityScale, ToothCode, ColorScale, ToothType } from '@app/data/enums/dental-evaluation.enums'; 
 
 @Injectable()
@@ -32,74 +31,87 @@ export class EvaluationService {
   ) {}
 
   // --- 1. CRIAR AVALIAÇÃO ---
+  // --- 1. CRIAR AVALIAÇÃO (COM CORREÇÃO DE ERRO 500 E DUPLICIDADE) ---
   async create(createDto: any): Promise<DentalEvaluation> {
     const animalIdNumber = Number(createDto.animalId);
 
     const animal = await this.animalRepository.findOne({ 
         where: { id: animalIdNumber } 
     });
-    
     if (!animal) throw new NotFoundException(`Animal não encontrado.`);
 
-    let evaluator = await this.userRepository.findOne({ 
-        where: { id: createDto.evaluatorId } 
-    });
-    
+    // FIX 1: Tenta achar o avaliador. Se não achar (banco resetado), pega o primeiro Admin.
+    let evaluator = await this.userRepository.findOne({ where: { id: createDto.evaluatorId } });
     if (!evaluator) {
-      evaluator = await this.userRepository.findOne({ order: { registrationDate: 'ASC' } });
+        evaluator = await this.userRepository.findOne({ where: { role: 'admin' } });
+    }
+    // FIX 1.1: Se não tiver NENHUM usuário, cria um de emergência para não dar Erro 500
+    if (!evaluator) {
+        evaluator = this.userRepository.create({
+            fullName: 'Admin Sistema', email: 'admin@sistema.com', password: '123', role: 'admin', registrationDate: new Date()
+        });
+        await this.userRepository.save(evaluator);
     }
 
-    if (!evaluator) throw new NotFoundException(`Nenhum avaliador encontrado.`);
-
-    const evaluation = this.evaluationRepository.create({
-      animal: animal, 
-      evaluator: evaluator,
-      generalObservations: createDto.notes || '',
-      evaluationDate: new Date()
+    // FIX 2: Verifica se já existe avaliação HOJE para não duplicar no histórico
+    let evaluation = await this.evaluationRepository.findOne({
+        where: { animal: { id: animal.id } },
+        relations: ['teeth'],
+        order: { evaluationDate: 'DESC' }
     });
+    
+    // Se for do mesmo dia, EDITAMOS a existente
+    const isSameDay = evaluation && new Date().toDateString() === new Date(evaluation.evaluationDate).toDateString();
+
+    if (evaluation && isSameDay) {
+        evaluation.generalObservations = createDto.notes || evaluation.generalObservations;
+        evaluation.evaluationDate = new Date(); // Atualiza hora
+    } else {
+        // Se for outro dia, cria nova
+        evaluation = this.evaluationRepository.create({
+            animal: animal, 
+            evaluator: evaluator,
+            generalObservations: createDto.notes || '',
+            evaluationDate: new Date()
+        });
+    }
     
     const savedEvaluation = await this.evaluationRepository.save(evaluation);
 
+    // Salva os dentes
     if (createDto.teeth && Array.isArray(createDto.teeth)) {
         for (const toothData of createDto.teeth) {
-          const tooth = this.toothRepository.create({
-              evaluation: savedEvaluation,
-              toothCode: toothData.toothCode,
-              
-              // NOVO: Tipo de dente (Leite/Permanente)
-              toothType: toothData.toothType || ToothType.PERMANENT,
-
-              isPresent: toothData.isPresent !== false,
-              
-              // ATUALIZADO: Removido sufixo 'Mm' e trocado por Level (0-2)
-              crownReductionLevel: toothData.crownReductionLevel || SeverityScale.NONE,
-              lingualWear: toothData.lingualWear || SeverityScale.NONE,
-              
-              // ATUALIZADO: Removido sufixo 'Mm' e trocado por Level (0-2)
-              gingivalRecessionLevel: toothData.gingivalRecessionLevel || SeverityScale.NONE,
-              
-              periodontalLesions: toothData.periodontalLesions || SeverityScale.NONE, 
-              
-              fractureLevel: toothData.fractureLevel || SeverityScale.NONE,
-              pulpitis: toothData.pulpitis || SeverityScale.NONE,
-              
-              vitrifiedBorder: toothData.vitrifiedBorder || SeverityScale.NONE, 
-              pulpChamberExposure: toothData.pulpChamberExposure || SeverityScale.NONE, 
-              gingivitisEdema: toothData.gingivitisEdema || SeverityScale.NONE, 
-              
-              // ATUALIZADO: Usando ColorScale (0 ou 1)
-              gingivitisColor: toothData.gingivitisColor || ColorScale.NORMAL, 
-
-              dentalCalculus: toothData.dentalCalculus || SeverityScale.NONE,
-              
-              // ATUALIZADO: Usando ColorScale (0 ou 1)
-              abnormalColor: toothData.abnormalColor || ColorScale.NORMAL,
-              
-              caries: toothData.caries || SeverityScale.NONE,
+          let tooth = await this.toothRepository.findOne({
+              where: { evaluation: { id: savedEvaluation.id }, toothCode: toothData.toothCode }
           });
+
+          if (!tooth) {
+             tooth = this.toothRepository.create({
+                 evaluation: savedEvaluation,
+                 toothCode: toothData.toothCode,
+             });
+          }
+
+          // Atualiza dados
+          tooth.toothType = toothData.toothType || ToothType.PERMANENT;
+          tooth.isPresent = toothData.isPresent !== false;
+          tooth.crownReductionLevel = toothData.crownReductionLevel || SeverityScale.NONE;
+          tooth.lingualWear = toothData.lingualWear || SeverityScale.NONE;
+          tooth.gingivalRecessionLevel = toothData.gingivalRecessionLevel || SeverityScale.NONE;
+          tooth.periodontalLesions = toothData.periodontalLesions || SeverityScale.NONE;
+          tooth.fractureLevel = toothData.fractureLevel || SeverityScale.NONE;
+          tooth.pulpitis = toothData.pulpitis || SeverityScale.NONE;
+          tooth.vitrifiedBorder = toothData.vitrifiedBorder || SeverityScale.NONE;
+          tooth.pulpChamberExposure = toothData.pulpChamberExposure || SeverityScale.NONE;
+          tooth.gingivitisEdema = toothData.gingivitisEdema || SeverityScale.NONE;
+          tooth.gingivitisColor = toothData.gingivitisColor || ColorScale.NORMAL;
+          tooth.dentalCalculus = toothData.dentalCalculus || SeverityScale.NONE;
+          tooth.abnormalColor = toothData.abnormalColor || ColorScale.NORMAL;
+          tooth.caries = toothData.caries || SeverityScale.NONE;
+
           await this.toothRepository.save(tooth);
         }
-    } else {
+    } else if (!isSameDay) {
         await this.createDefaultHealthyTeeth(savedEvaluation);
     }
     
@@ -317,31 +329,27 @@ export class EvaluationService {
   // --- 10. SEED ---
   async seed() {
 
+    const randomId = Math.floor(Math.random() * 99999);
+    const breeds = ['Nelore', 'Angus', 'Brahman', 'Senepol', 'Holandês'];
+    const farms = ['Fazenda Santa Fé', 'Fazenda Ouro Verde', 'Rancho do Vale'];
+    
+    const randomBreed = breeds[Math.floor(Math.random() * breeds.length)];
+    const randomFarm = farms[Math.floor(Math.random() * farms.length)];
+
     await this.createAnimalFromUpload(
-      'BR-2026-A',
-      'Nelore',
-      ['https://placehold.co/600x400/000000/FFFFFF/png?text=Frontal'],
+      `BR-SEED-${randomId}`, 
+      randomBreed,
+      ['https://placehold.co/600x400/222/fff/png?text=Foto+Animal'],
       {
-        farm: 'Fazenda Santa Fé',
-        client: 'Rodrigo Penso',
-        location: 'Goiás - GO',
-        collectionDate: new Date('2026-01-12'),
-        age: 36
+        farm: randomFarm,
+        client: 'Cliente Teste',
+        location: 'Seed Location',
+        collectionDate: new Date(),
+        age: 24 + Math.floor(Math.random() * 24)
       }
     );
 
-    return await this.createAnimalFromUpload(
-      'BR-2026-B',
-      'Angus',
-      ['https://placehold.co/600x400/550000/FFFFFF/png?text=Frontal'],
-      {
-        farm: 'Fazenda Ouro Verde',
-        client: 'Fabiano Araújo',
-        location: 'Nova Crixás - GO',
-        collectionDate: new Date('2026-01-14'),
-        age: 18
-      }
-    );
+    return { message: `✅ Animal BR-SEED-${randomId} criado com sucesso! Atualize a página para criar mais.` };
   }
 
   // --- HELPER PRIVADO ---
@@ -356,4 +364,5 @@ export class EvaluationService {
       }));
       await this.toothRepository.save(teethEntities);
   }
+  
 }

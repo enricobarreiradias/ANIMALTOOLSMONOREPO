@@ -1,17 +1,14 @@
-// Alterado para atender a solicitação de 3 níveis (Normal, Moderado, Crítico)
 export enum SeverityScale {
-  NONE = 0,      // Saudável / Normal / Ausente
-  MODERATE = 1,  // Moderado
-  SEVERE = 2,    // Crítico / Severo
+  NONE = 0,      
+  MODERATE = 1,  
+  SEVERE = 2,    
 }
 
-// Novo Enum solicitado: Cor deve ser apenas Normal ou Alterado
 export enum ColorScale {
   NORMAL = 0,
   ALTERED = 1,
 }
 
-// Novo Enum solicitado: Identificar dente de Leite vs Permanente
 export enum ToothType {
   DECIDUOUS = 'DECIDUOUS', // Dente de Leite
   PERMANENT = 'PERMANENT', // Dente Permanente
@@ -22,7 +19,6 @@ export enum BinaryStatus {
   PRESENT = 1
 }
 
-// Mantido IGUAL ao seu original para não quebrar o mapa do frontend
 export enum ToothCode {
   I1_LEFT = 'I1_L',
   I1_RIGHT = 'I1_R',

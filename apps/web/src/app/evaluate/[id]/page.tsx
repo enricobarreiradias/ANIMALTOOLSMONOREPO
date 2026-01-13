@@ -106,7 +106,6 @@ export default function EvaluationPage() {
     }
   }, [params?.id]);
 
-  // CORREÇÃO 1: Tipagem explícita aqui (number | boolean | ToothType) remove o 'any'
   const updateTooth = (field: keyof typeof initialToothState, value: number | boolean | ToothType) => {
     if (!selectedTooth) return;
     setTeethData(prev => ({
@@ -130,7 +129,7 @@ export default function EvaluationPage() {
       });
       
       setFeedback({ open: true, message: 'Avaliação salva com sucesso!', type: 'success' });
-      setTimeout(() => router.push('/history'), 1500);
+      setTimeout(() => router.push('/pending'), 1000);
     } catch (error) {
       console.error(error);
       setFeedback({ open: true, message: 'Erro ao salvar avaliação.', type: 'error' });

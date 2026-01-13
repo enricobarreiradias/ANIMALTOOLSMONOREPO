@@ -15,11 +15,10 @@ export class ToothEvaluation {
   })
   toothCode: ToothCode;
 
-  // --- NOVO CAMPO: Tipo de Dente (Leite ou Permanente)  ---
   @Column({ 
     type: 'simple-enum', 
     enum: ToothType, 
-    default: ToothType.PERMANENT, // Assumindo permanente por padrão, mas o ideal é o user selecionar
+    default: ToothType.PERMANENT, // Assumindo permanente por padrão
     name: 'tooth_type' 
   })
   toothType: ToothType;
@@ -28,14 +27,12 @@ export class ToothEvaluation {
   @Column({ name: 'is_present', default: true }) 
   isPresent: boolean;
 
-  // MUDANÇA: De float(mm) para int(SeverityScale) conforme pedido para remover mm 
   @Column({ name: 'crown_reduction_level', type: 'int', default: SeverityScale.NONE })
   crownReductionLevel: number; 
 
   @Column({ name: 'lingual_wear', type: 'int', default: SeverityScale.NONE })
   lingualWear: SeverityScale;
 
-  // MUDANÇA: De float(mm) para int(SeverityScale) - Recessão agora é parâmetro crítico 
   @Column({ name: 'gingival_recession_level', type: 'int', default: SeverityScale.NONE })
   gingivalRecessionLevel: number;
 
@@ -59,7 +56,6 @@ export class ToothEvaluation {
   @Column({ name: 'gingivitis_edema', type: 'int', default: SeverityScale.NONE })
   gingivitisEdema: SeverityScale;
 
-  // MUDANÇA: Agora usa ColorScale (0=Normal, 1=Alterado) 
   @Column({ name: 'gingivitis_color', type: 'int', default: ColorScale.NORMAL })
   gingivitisColor: number;
 
@@ -67,7 +63,6 @@ export class ToothEvaluation {
   @Column({ name: 'dental_calculus', type: 'int', default: SeverityScale.NONE })
   dentalCalculus: SeverityScale;
 
-  // MUDANÇA: Agora usa ColorScale (0=Normal, 1=Alterado) 
   @Column({ name: 'abnormal_color', type: 'int', default: ColorScale.NORMAL })
   abnormalColor: number; 
 

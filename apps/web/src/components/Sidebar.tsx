@@ -5,10 +5,10 @@ import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { 
   Drawer, Toolbar, List, Typography, ListItem, ListItemButton, 
-  ListItemIcon, ListItemText, Box, Card, Avatar, Tooltip, IconButton 
+  ListItemIcon, ListItemText, Box, Card, Avatar, Tooltip, IconButton
 } from '@mui/material';
 import { 
-  Dashboard, Assignment, History, Logout, ChevronRight, Person // Se descomentar o Consulta de Rebanho, importar Search também
+  Dashboard, Assignment, History, Logout, ChevronRight, Person 
 } from '@mui/icons-material';
 
 const drawerWidth = 280;
@@ -18,7 +18,6 @@ export default function Sidebar() {
 
   const menuItems = [
     { text: 'Dashboard', icon: <Dashboard />, path: '/' },
-    // { text: 'Consulta de Rebanho', icon: <Search />, path: '/search' },
     { text: 'Mesa de Avaliação', icon: <Assignment />, path: '/pending' },
     { text: 'Histórico', icon: <History />, path: '/history' },
   ];
@@ -46,8 +45,8 @@ export default function Sidebar() {
             width={200} 
             height={150} 
             style={{ objectFit: 'contain' }}
+            priority
           />
-          
         </Box>
       </Toolbar>
 
@@ -63,15 +62,20 @@ export default function Sidebar() {
                 sx={{
                   borderRadius: 2, 
                   py: 1.5,
-                  '&.Mui-selected': { bgcolor: 'primary.light', color: 'primary.main' },
-                  '&:hover': { bgcolor: 'background.default' }
+
+                  '&.Mui-selected': { 
+                    bgcolor: 'rgba(0, 0, 0, 0.04)', // Cinza bem leve
+                    color: 'primary.main',
+                    fontWeight: 'bold'
+                  },
+                  '&:hover': { bgcolor: 'rgba(0, 0, 0, 0.04)' }
                 }}
               >
                 <ListItemIcon sx={{ minWidth: 40, color: active ? 'primary.main' : 'text.secondary' }}>
                   {item.icon}
                 </ListItemIcon>
                 <ListItemText primary={item.text} primaryTypographyProps={{ fontWeight: active ? 700 : 500 }} />
-                {active && <ChevronRight fontSize="small" sx={{ opacity: 0.5 }} />}
+                {active && <ChevronRight fontSize="small" sx={{ opacity: 0.5, color: 'primary.main' }} />}
               </ListItemButton>
             </ListItem>
           );
@@ -79,7 +83,7 @@ export default function Sidebar() {
       </List>
       
       <Box sx={{ mt: 'auto', p: 3 }}>
-         <Card variant="outlined" sx={{ bgcolor: 'background.default', border: 'none' }}>
+         <Card variant="outlined" sx={{ bgcolor: '#f8fafc', border: 'none' }}>
             <Box p={2} display="flex" alignItems="center" gap={2}>
                <Avatar sx={{ width: 32, height: 32, bgcolor: 'secondary.main' }}>
                   <Person fontSize="small" />
