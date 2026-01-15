@@ -155,39 +155,49 @@ export default function EvaluationPage() {
     }));
   };
 
-  // --- LÓGICA DO ATALHO DE MUDA (TIAGO REQUEST) ---
-  const handleQuickMoulting = (stage: MoultingStage) => {
-      // Define quais dentes são PERMANENTES baseado no estágio
-      // I1 (Pinças), I2 (1º Médios), I3 (2º Médios), I4 (Cantos)
-      const permMap: Record<string, boolean> = {
-          I1: [MoultingStage.D2, MoultingStage.D4, MoultingStage.D6, MoultingStage.BC].includes(stage),
-          I2: [MoultingStage.D4, MoultingStage.D6, MoultingStage.BC].includes(stage),
-          I3: [MoultingStage.D6, MoultingStage.BC].includes(stage),
-          I4: [MoultingStage.BC].includes(stage),
-      };
+  // --- LÓGICA DO ATALHO DE MUDA (TIAGO) ---
+  const handleQuickMoulting = async (stage: MoultingStage) => {
+        if (!animal) return;
 
-      setTeethData(prev => {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const nextData: any = { ...prev };
+        setSaving(true); 
+        try {
+            const response = await EvaluationService.applyQuickMoulting({
+                animalId: animal.id,
+                stage: stage,
+                evaluatorId: 1 
+            });
 
-          Object.keys(nextData).forEach(key => {
-              // Descobre se é I1, I2... baseado no código (ex: 'I1_LEFT')
-              const toothPrefix = key.split('_')[0]; // Pega 'I1'
-              const isPermanent = permMap[toothPrefix];
+            const updatedEvaluation = response.data;
+            
+            if (updatedEvaluation && updatedEvaluation.teeth) {
+              setTeethData(prev => {
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  const nextTeethData: any = { ...prev };
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  updatedEvaluation.teeth.forEach((tooth: any) => {
+                      if (nextTeethData[tooth.toothCode]) {
+                        nextTeethData[tooth.toothCode] = {
+                            ...initialToothState, 
+                            ...tooth,
+                            isPresent: tooth.isPresent ?? true
+                        };
+                      }
+                  });
+                  return nextTeethData;
+              });
+              
+              setEvaluationId(updatedEvaluation.id);
+            }
 
-              // Reseta o dente para SAUDÁVEL e define o tipo correto
-              nextData[key] = {
-                  ...initialToothState, // Zera patologias
-                  isPresent: true,
-                  toothType: isPermanent ? ToothType.PERMANENT : ToothType.DECIDUOUS
-              };
-          });
+            setFeedback({ open: true, message: `Muda ${stage} aplicada e salva com sucesso!`, type: 'success' });
 
-          return nextData;
-      });
-
-      setFeedback({ open: true, message: `Muda ${stage} aplicada! Dentes atualizados.`, type: 'success' });
-  };
+        } catch (error) {
+            console.error(error);
+            setFeedback({ open: true, message: 'Erro ao aplicar muda rápida.', type: 'error' });
+        } finally {
+            setSaving(false);
+        }
+    };
 
   const handleSave = async () => {
       setSaving(true);

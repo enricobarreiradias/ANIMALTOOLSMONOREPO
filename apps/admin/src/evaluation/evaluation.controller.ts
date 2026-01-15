@@ -17,12 +17,15 @@ import {
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
-
+import { QuickMoultingDto } from './dto/quick-moulting.dto'; 
 import { EvaluationService } from './evaluation.service';
+
+
 
 @Controller('evaluations')
 export class EvaluationController {
   constructor(private readonly evaluationService: EvaluationService) {}
+
 
   @Post()
   @UsePipes(new ValidationPipe({ transform: true }))
@@ -115,4 +118,10 @@ export class EvaluationController {
   async remove(@Param('id') id: string) {
     return await this.evaluationService.remove(+id);
   }
+
+  @Post('quick-moulting')
+  async applyQuickMoulting(@Body() dto: QuickMoultingDto) {
+    return this.evaluationService.applyQuickMoulting(dto);
+  }
+  
 }

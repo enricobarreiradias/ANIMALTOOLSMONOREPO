@@ -14,7 +14,7 @@ export default function ClientShell({ children }: { children: React.ReactNode })
             component="main" 
             sx={{ 
               flexGrow: 1, 
-              p: 1, 
+              p: 2, 
               width: '100%', 
               overflowX: 'hidden'
             }}

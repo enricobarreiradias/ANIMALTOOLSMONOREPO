@@ -37,15 +37,13 @@ export default function DashboardPage() {
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        // CORREÇÃO: Chamada única ao endpoint otimizado do backend
-        // O backend retorna: { totalAnimals, totalEvaluations, pendingEvaluations, criticalCases }
         const response = await api.get('/evaluations/dashboard');
         const data = response.data;
 
         setStats({
           totalAnimals: data.totalAnimals,
-          evaluated: data.totalEvaluations, // Mapeamos do backend
-          critical: data.criticalCases      // Mapeamos do backend
+          evaluated: data.totalEvaluations, 
+          critical: data.criticalCases      
         });
       } catch (err) {
         console.error("Erro ao carregar dados:", err);
@@ -66,7 +64,6 @@ export default function DashboardPage() {
     );
   }
 
-  // --- COMPONENTE INTERNO ---
   const StatCard = ({ title, value, icon, color, subtitle }: StatCardProps) => (
     <Card sx={{ height: '100%', position: 'relative', overflow: 'hidden' }}>
       <Box 

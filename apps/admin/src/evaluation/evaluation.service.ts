@@ -8,6 +8,8 @@ import { Animal } from '@app/data/entities/animal.entity';
 import { User } from '@app/data/entities/user.entity';
 import { Media } from '@app/data/entities/media.entity'; 
 import { PhotoType, SeverityScale, ToothCode, ColorScale, ToothType } from '@app/data/enums/dental-evaluation.enums'; 
+import { MoultingStage } from '@app/data/enums/dental-evaluation.enums'; // Importe o Enum
+import { QuickMoultingDto } from './dto/quick-moulting.dto'; // Importe o DTO
 
 @Injectable()
 export class EvaluationService {
@@ -37,17 +39,13 @@ export class EvaluationService {
     const animal = await this.animalRepository.findOne({ 
         where: { id: animalIdNumber } 
     });
-    if (!animal) throw new NotFoundException(`Animal não encontrado.`);
+    if (!animal) throw new NotFoundException(`Animal #${animalIdNumber} não encontrado.`);
 
-    let evaluator = await this.userRepository.findOne({ where: { id: createDto.evaluatorId } });
+    const evaluatorId = createDto.evaluatorId || 1; 
+    const evaluator = await this.userRepository.findOne({ where: { id: evaluatorId } });
+    
     if (!evaluator) {
-        evaluator = await this.userRepository.findOne({ where: { role: 'admin' } });
-    }
-    if (!evaluator) {
-        evaluator = this.userRepository.create({
-            fullName: 'Admin Sistema', email: 'admin@sistema.com', password: '123', role: 'admin', registrationDate: new Date()
-        });
-        await this.userRepository.save(evaluator);
+        throw new NotFoundException(`Avaliador (User ID: ${evaluatorId}) não encontrado no sistema.`);
     }
 
     let evaluation = await this.evaluationRepository.findOne({
@@ -108,6 +106,48 @@ export class EvaluationService {
     }
     
     return this.findOne(savedEvaluation.id);
+  }
+  // --- APLICAÇÃO DE MUDA RÁPIDA ---
+  async applyQuickMoulting(dto: QuickMoultingDto) {
+      const stage = dto.stage;
+      
+      const permanentRules = {
+        I1: [MoultingStage.D2, MoultingStage.D4, MoultingStage.D6, MoultingStage.BC].includes(stage),
+        I2: [MoultingStage.D4, MoultingStage.D6, MoultingStage.BC].includes(stage),
+        I3: [MoultingStage.D6, MoultingStage.BC].includes(stage),
+        I4: [MoultingStage.BC].includes(stage),
+      };
+
+      const teethToSave = Object.values(ToothCode).map(code => {
+        const prefix = code.split('_')[0]; 
+        const isPermanent = permanentRules[prefix] || false;
+
+        return {
+          toothCode: code,
+          isPresent: true,
+          toothType: isPermanent ? ToothType.PERMANENT : ToothType.DECIDUOUS,
+          fractureLevel: SeverityScale.NONE,
+          pulpitis: SeverityScale.NONE,
+          gingivalRecessionLevel: SeverityScale.NONE,
+          crownReductionLevel: SeverityScale.NONE,
+          lingualWear: SeverityScale.NONE,
+          periodontalLesions: SeverityScale.NONE,
+          dentalCalculus: SeverityScale.NONE,
+          caries: SeverityScale.NONE,
+          vitrifiedBorder: SeverityScale.NONE,
+          pulpChamberExposure: SeverityScale.NONE,
+          gingivitisEdema: SeverityScale.NONE,
+          gingivitisColor: ColorScale.NORMAL,
+          abnormalColor: ColorScale.NORMAL,
+        };
+      });
+
+      return this.create({
+        animalId: dto.animalId,
+        evaluatorId: dto.evaluatorId,
+        notes: `Muda Rápida aplicada: ${stage}`, 
+        teeth: teethToSave
+      });
   }
 
   // --- 2. PENDENTES COM FILTROS E PAGINAÇÃO ---

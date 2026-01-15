@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateAnimalDto } from './dto/create-animal.dto';
@@ -24,20 +24,26 @@ export class AnimalService {
   }
 
   // 3. FIND ONE (Buscar um pelo ID)
-  findOne(id: number) {
-    // ATENÇÃO: Se seu banco usar UUID (letras e números), 
-    // mude o tipo 'id: number' para 'id: any' ou 'id: string'
-    return this.animalRepository.findOneBy({ id } as any);
+  async findOne(id: number) {
+    const animal = await this.animalRepository.findOneBy({ id });
+    
+    if (!animal) {
+      throw new NotFoundException(`Animal com ID ${id} não encontrado.`);
+    }
+    return animal;
   }
 
   // 4. UPDATE (Atualizar)
   async update(id: number, updateAnimalDto: UpdateAnimalDto) {
+    await this.findOne(id); 
+    
     await this.animalRepository.update(id, updateAnimalDto);
     return this.findOne(id);
   }
 
   // 5. REMOVE (Deletar)
-  remove(id: number) {
-    return this.animalRepository.delete(id);
+  async remove(id: number) {
+    const animal = await this.findOne(id);
+    return this.animalRepository.remove(animal);
   }
 }

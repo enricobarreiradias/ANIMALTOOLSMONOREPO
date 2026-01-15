@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger'; 
+import { ValidationPipe } from '@nestjs/common'; 
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -11,9 +12,13 @@ async function bootstrap() {
     credentials: true,
   });
 
-  // --- ADICIONE ESTA LINHA AQUI ---
-  // Isso faz todas as rotas começarem com /api (ex: /api/evaluations)
   app.setGlobalPrefix('api'); 
+
+  app.useGlobalPipes(new ValidationPipe({
+      whitelist: true, 
+      forbidNonWhitelisted: true, 
+      transform: true, 
+    }));
 
   const config = new DocumentBuilder()
     .setTitle('AnimalTools Admin API')

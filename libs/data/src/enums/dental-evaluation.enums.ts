@@ -37,3 +37,11 @@ export enum PhotoType {
   LATERAL_RIGHT = 'LATERAL_RIGHT',
   SUPERIOR = 'SUPERIOR'
 }
+
+export enum MoultingStage {
+  DL = 'DL', // Dente de Leite (0 permanentes)
+  D2 = 'D2', // 2 Permanentes (Pinças)
+  D4 = 'D4', // 4 Permanentes (Primeiros Médios)
+  D6 = 'D6', // 6 Permanentes (Segundos Médios)
+  BC = 'BC'  // Boca Cheia (Todos Permanentes - Cantos)
+}

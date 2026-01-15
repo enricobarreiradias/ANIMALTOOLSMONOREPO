@@ -19,8 +19,8 @@ export default function Sidebar() {
   const menuItems = [
     { text: 'Dashboard', icon: <Dashboard />, path: '/' },
     { text: 'Mesa de Avaliação', icon: <Assignment />, path: '/pending' },
-    { text: 'Histórico', icon: <History />, path: '/history' },
     {text: 'Relatórios', icon: <Assignment />, path: '/reports' },
+    { text: 'Histórico', icon: <History />, path: '/history' },
   ];
 
   return (
