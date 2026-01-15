@@ -1,50 +1,61 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany, CreateDateColumn } from 'typeorm';
+import { 
+  Entity, 
+  PrimaryGeneratedColumn, 
+  Column, 
+  CreateDateColumn,
+  OneToMany 
+} from 'typeorm';
 import { DentalEvaluation } from './dental-evaluation.entity';
 import { Media } from './media.entity';
 
-@Entity('animal') 
+@Entity('animal')
 export class Animal {
   @PrimaryGeneratedColumn('increment')
   id: number;
 
-  @Column({ name: 'tag_code', unique: true })   
+  @Column({ name: 'tag_code', type: 'varchar', length: 50 })
   tagCode: string;
+  
+  @Column({ type: 'varchar', nullable: true })
+  chip: string | null; 
 
-  @Column()
-  breed: string;
+  @Column({ name: 'sisbov_number', type: 'varchar', nullable: true })
+  sisbovNumber: string | null;
 
-  @Column({ nullable: true })
-  age: number;
+  @Column({ type: 'date', nullable: true, name: 'birth_date' })
+  birthDate: Date | null;
 
-  @Column({ nullable: true })
-  farm: string;
+  @Column({ type: 'float', nullable: true, name: 'current_weight' })
+  currentWeight: number | null; 
 
-  @Column({ nullable: true })
-  client: string;
+  @Column({ type: 'varchar', nullable: true })
+  breed: string | null;
 
-  @Column({ nullable: true })
-  location: string;
+  @Column({ type: 'varchar', nullable: true })
+  farm: string | null;
+
+  @Column({ type: 'varchar', nullable: true })
+  lot: string | null;
+
+  @Column({ type: 'varchar', nullable: true })
+  client: string | null;
+
+  @Column({ type: 'varchar', nullable: true })
+  location: string | null;
+
+  @Column({ type: 'int', nullable: true })
+  age: number | null;
 
   @Column({ name: 'collection_date', type: 'timestamp', nullable: true })
-  collectionDate: Date;
+  collectionDate: Date | null;
 
-  // --- CAMPOS LEGADOS ---
-  @Column({ name: 'animal_identifier', nullable: true })
-  animalIdentifier: string;
 
-  @Column({ name: 'age_in_months', nullable: true }) // Mantido caso o legado use
-  ageInMonths: number;
-
-  @Column({ name: 'general_status', nullable: true })
-  generalStatus: string;
-
-  // --- DATAS E RELACIONAMENTOS ---
-  @CreateDateColumn({ name: 'registration_date' })
-  registrationDate: Date;
+  @CreateDateColumn({ name: 'created_at' })
+  createdAt: Date;
 
   @OneToMany(() => DentalEvaluation, (evaluation) => evaluation.animal)
   dentalEvaluations: DentalEvaluation[];
-  
+
   @OneToMany(() => Media, (media) => media.animal)
-  mediaFiles: Media[]; 
+  mediaFiles: Media[];
 }
