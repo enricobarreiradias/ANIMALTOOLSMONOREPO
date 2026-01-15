@@ -20,6 +20,7 @@ export default function Sidebar() {
     { text: 'Dashboard', icon: <Dashboard />, path: '/' },
     { text: 'Mesa de Avaliação', icon: <Assignment />, path: '/pending' },
     { text: 'Histórico', icon: <History />, path: '/history' },
+    {text: 'Relatórios', icon: <Assignment />, path: '/reports' },
   ];
 
   return (
@@ -64,7 +65,7 @@ export default function Sidebar() {
                   py: 1.5,
 
                   '&.Mui-selected': { 
-                    bgcolor: 'rgba(0, 0, 0, 0.04)', // Cinza bem leve
+                    bgcolor: 'rgba(0, 0, 0, 0.04)', 
                     color: 'primary.main',
                     fontWeight: 'bold'
                   },

@@ -46,7 +46,6 @@ export default function HistoryPage() {
   const loadHistory = async () => {
     setLoading(true);
     try {
-
       const response = await EvaluationService.getAllHistory(page + 1, rowsPerPage);
       
       setHistoryData(response.data.data || []);
@@ -69,8 +68,9 @@ export default function HistoryPage() {
     setPage(0); 
   };
 
+  // --- CORREÇÃO AQUI: Adicionamos ?source=history ao link ---
   const handleEdit = (item: HistoryItem) => {
-    router.push(`/evaluate/${item.animalId}`);
+    router.push(`/evaluate/${item.animalId}?source=history`);
   };
 
   const displayData = historyData.filter(item => 
@@ -97,7 +97,6 @@ export default function HistoryPage() {
                     <Typography variant="caption" fontWeight="bold">TOTAL REGISTROS</Typography>
                     <Typography variant="h5" fontWeight={800}>{total}</Typography>
                 </Box>
-                {/* Nota: Esse contador de críticos agora mostra apenas os da PÁGINA ATUAL */}
                 <Box>
                     <Typography variant="caption" fontWeight="bold" color="error">CRÍTICOS (PÁG)</Typography>
                     <Typography variant="h5" fontWeight={800} color="error">

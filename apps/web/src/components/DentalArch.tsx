@@ -4,14 +4,14 @@ import { Box, Paper, Typography, Tooltip } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { ToothCode } from '../types/dental'; 
 
-// DEFINIÇÃO LOCAL DA NOVA ESCALA (Para garantir a regra visual 0-1-2)
+// Definição da escala de severidade (para garantir 0-1-2)
 const SeverityScale = {
   NONE: 0,
   MODERATE: 1,
   SEVERE: 2
 };
 
-// 1. Função que calcula a PIOR nota do dente (olhando todos os critérios)
+// 1. Função que calcula a pior nota do dente (olhando todos os critérios)
 
 //eslint-disable-next-line @typescript-eslint/no-explicit-any
 const getToothSeverity = (data: any) => {
@@ -31,10 +31,10 @@ const getToothSeverity = (data: any) => {
   return Math.max(...severityValues.map(v => Number(v) || 0));
 };
 
-// 2. Cores baseadas na NOVA severidade (0, 1, 2)
+// 2. Cores baseadas na nova severidade (0, 1, 2)
 const getSeverityColor = (level: number) => {
   if (level >= SeverityScale.SEVERE) return '#ef4444'; // Vermelho (Crítico)
-  if (level === SeverityScale.MODERATE) return '#facc15'; // Amarelo/Ouro (Moderado)
+  if (level === SeverityScale.MODERATE) return '#facc15'; // Amarelo (Moderado)
   return '#e2e8f0'; // Cinza (Saudável)
 };
 

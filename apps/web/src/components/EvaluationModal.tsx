@@ -22,15 +22,14 @@ import {
 import { useForm, Controller } from 'react-hook-form';
 import { api } from '../services/api';
 
-// --- TIPOS CORRIGIDOS (UUID) ---
 interface Animal {
-  id: string;        // MUDADO DE NUMBER PARA STRING (UUID)
+  id: string;        
   tagCode: string;
   breed?: string;
 }
 
 interface ClinicalEvaluationData {
-  animalId: string;  // MUDADO DE NUMBER PARA STRING
+  animalId: string;  
   isToothAbsent: boolean;
   fractureLevel: string; 
   crownReduction: boolean;
@@ -49,7 +48,6 @@ interface Props {
   onSuccess: () => void;
 }
 
-// --- CONSTANTES ---
 const DEFAULT_EVALUATOR_ID = "d290f1ee-6c54-4b01-90e6-d701748f0851";
 
 const MOCK_PHOTOS = {
@@ -61,7 +59,7 @@ export function EvaluationModal({ open, onClose, onSuccess }: Props) {
   
   const { register, handleSubmit, control, reset } = useForm<ClinicalEvaluationData>({
     defaultValues: {
-      animalId: '', // Inicializa vazio como string
+      animalId: '', 
       isToothAbsent: false,
       fractureLevel: 'NONE',
       crownReduction: false,
@@ -82,7 +80,6 @@ export function EvaluationModal({ open, onClose, onSuccess }: Props) {
     if (open) {
       api.get('/animal')
         .then((res) => {
-          // Garante que é um array, mesmo se o backend retornar paginado
           const data = Array.isArray(res.data) ? res.data : (res.data.data || []);
           setAnimals(data);
           setErrorMsg(null);

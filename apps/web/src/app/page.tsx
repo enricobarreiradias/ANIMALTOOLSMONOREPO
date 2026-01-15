@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { 
   Box, Grid, Card, CardContent, Typography, 
-  CircularProgress, Stack, Chip, Divider, LinearProgress 
+  CircularProgress, Stack, Chip, Divider, LinearProgress, Alert 
 } from '@mui/material';
 import { 
   Pets, Assessment, Warning, TrendingUp, CalendarToday, CheckCircle 
@@ -15,13 +15,6 @@ interface DashboardStats {
   totalAnimals: number;
   evaluated: number;
   critical: number;
-}
-
-interface EvaluationRecord {
-  id: string;
-  fractureLevel: string;
-  pulpitis: boolean;
-  toothFracture?: number;
 }
 
 interface StatCardProps {
@@ -39,30 +32,24 @@ export default function DashboardPage() {
     critical: 0
   });
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const animalsRes = await api.get('/animal');
-        const animals = Array.isArray(animalsRes.data) ? animalsRes.data : (animalsRes.data.data || []);
-
-        const historyRes = await api.get('/evaluations/history');
-        const history = Array.isArray(historyRes.data) ? historyRes.data : (historyRes.data.data || []);
-        
-        const criticalCount = history.filter((h: EvaluationRecord) => {
-           if (h.toothFracture !== undefined) {
-              return Number(h.toothFracture) >= 4; 
-           }
-           return h.fractureLevel === 'SEVERE' || h.pulpitis === true;
-        }).length;
+        // CORREÇÃO: Chamada única ao endpoint otimizado do backend
+        // O backend retorna: { totalAnimals, totalEvaluations, pendingEvaluations, criticalCases }
+        const response = await api.get('/evaluations/dashboard');
+        const data = response.data;
 
         setStats({
-          totalAnimals: animals.length,
-          evaluated: history.length,
-          critical: criticalCount
+          totalAnimals: data.totalAnimals,
+          evaluated: data.totalEvaluations, // Mapeamos do backend
+          critical: data.criticalCases      // Mapeamos do backend
         });
-      } catch (error) {
-        console.error("Erro ao carregar dados:", error);
+      } catch (err) {
+        console.error("Erro ao carregar dados:", err);
+        setError('Falha ao conectar com o servidor.');
       } finally {
         setLoading(false);
       }
@@ -115,6 +102,12 @@ export default function DashboardPage() {
 
   return (
     <div className="fade-in">
+        {error && (
+            <Box mb={3}>
+                <Alert severity="error">{error}</Alert>
+            </Box>
+        )}
+
       <Box mb={5} display="flex" justifyContent="space-between" alignItems="end" flexWrap="wrap" gap={2}>
         <Box>
           <Typography variant="h4" gutterBottom fontWeight={700}>
@@ -196,7 +189,7 @@ export default function DashboardPage() {
             </Card>
         </Grid>
         
-        {/* Status do Sistema (Substituto da Dica do Dia) */}
+        {/* Status do Sistema */}
         <Grid size={{ xs: 12, md: 4 }}>
             <Card sx={{ height: '100%', bgcolor: '#1E293B', color: 'white' }}>
                 <CardContent sx={{ p: 4, display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'center' }}>

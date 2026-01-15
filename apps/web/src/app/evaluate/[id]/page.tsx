@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation'; 
 import { 
   Box, Grid, Typography, Card, CardContent, Button, 
   Container, CircularProgress, TextField, 
@@ -14,9 +14,10 @@ import {
 } from '@mui/icons-material';
 import { AnimalService, EvaluationService } from '../../../services/api';
 import DentalArch from '../../../components/DentalArch';
-import { ToothCode } from '../../../types/dental';
+import QuickMoultingSelector from '../../../components/QuickMoultingSelector'; // Importa só o componente
+import { ToothCode, MoultingStage } from '../../../types/dental'; // Importa os tipos e enums
 
-// --- ENUMS LOCAIS PARA A REGRA NOVA (3 NÍVEIS) ---
+// --- ENUMS E TIPOS ---
 enum SeverityScale {
   NONE = 0,      // Saudável
   MODERATE = 1,  // Moderado
@@ -52,7 +53,6 @@ const initialToothState = {
   isPresent: true,
   toothType: ToothType.PERMANENT, 
   
-  // Scores Gerais (0, 1, 2)
   fractureLevel: SeverityScale.NONE,
   pulpitis: SeverityScale.NONE,
   crownReductionLevel: SeverityScale.NONE, 
@@ -65,7 +65,6 @@ const initialToothState = {
   dentalCalculus: SeverityScale.NONE,
   caries: SeverityScale.NONE,
   
-  // Scores de Cor (0, 1)
   gingivitisColor: ColorScale.NORMAL,
   abnormalColor: ColorScale.NORMAL,
 };
@@ -73,8 +72,10 @@ const initialToothState = {
 export default function EvaluationPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   
   const [animal, setAnimal] = useState<Animal | null>(null);
+  const [evaluationId, setEvaluationId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [feedback, setFeedback] = useState({ open: false, message: '', type: 'success' as 'success' | 'error' });
@@ -82,7 +83,6 @@ export default function EvaluationPage() {
   const [selectedTooth, setSelectedTooth] = useState<string | null>(null);
   const [generalNotes, setGeneralNotes] = useState('');
   
-  // Estado dos dentes
   const [teethData, setTeethData] = useState<Record<string, typeof initialToothState>>({
     [ToothCode.I1_LEFT]: { ...initialToothState },
     [ToothCode.I1_RIGHT]: { ...initialToothState },
@@ -96,15 +96,56 @@ export default function EvaluationPage() {
 
   useEffect(() => {
     if (params?.id) {
-      AnimalService.getOne(params.id as string)
-        .then((res) => setAnimal(res.data))
-        .catch((err) => {
-          console.error(err);
-          setFeedback({ open: true, message: 'Erro ao carregar animal', type: 'error' });
-        })
-        .finally(() => setLoading(false));
+      const animalId = params.id as string;
+      setLoading(true);
+
+      Promise.all([
+        AnimalService.getOne(animalId),
+        EvaluationService.getByAnimal ? EvaluationService.getByAnimal(animalId) : Promise.resolve({ data: [] }) 
+      ])
+      .then(([animalRes, evaluationRes]) => {
+        setAnimal(animalRes.data);
+
+        const history = evaluationRes.data;
+        if (Array.isArray(history) && history.length > 0) {
+           const latestEvaluation = history[0]; 
+           
+           if (latestEvaluation) {
+             setEvaluationId(latestEvaluation.id);
+
+             // eslint-disable-next-line @typescript-eslint/no-explicit-any
+             const notes = (latestEvaluation as any).generalObservations || latestEvaluation.notes || '';
+             setGeneralNotes(notes);
+
+             if (latestEvaluation.notes) setGeneralNotes(latestEvaluation.notes);
+
+             if (latestEvaluation.teeth) {
+                 setTeethData(prev => {
+                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                     const nextTeethData: any = { ...prev };
+                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                     latestEvaluation.teeth.forEach((tooth: any) => {
+                        if (nextTeethData[tooth.toothCode]) {
+                           nextTeethData[tooth.toothCode] = {
+                              ...initialToothState, 
+                              ...tooth,             
+                              isPresent: tooth.isPresent ?? true
+                           };
+                        }
+                     });
+                     return nextTeethData;
+                 });
+             }
+           }
+        }
+      })
+      .catch((err) => {
+        console.error(err);
+        setFeedback({ open: true, message: 'Erro ao carregar dados.', type: 'error' });
+      })
+      .finally(() => setLoading(false));
     }
-  }, [params?.id]);
+  }, [params?.id]); 
 
   const updateTooth = (field: keyof typeof initialToothState, value: number | boolean | ToothType) => {
     if (!selectedTooth) return;
@@ -114,29 +155,77 @@ export default function EvaluationPage() {
     }));
   };
 
-  const handleSave = async () => {
-    setSaving(true);
-    try {
-      const teethArray = Object.entries(teethData).map(([code, data]) => ({
-        toothCode: code, ...data
-      }));
-      
-      await EvaluationService.create({
-        animalId: animal?.id,
-        evaluatorId: 1, 
-        notes: generalNotes,
-        teeth: teethArray
+  // --- LÓGICA DO ATALHO DE MUDA (TIAGO REQUEST) ---
+  const handleQuickMoulting = (stage: MoultingStage) => {
+      // Define quais dentes são PERMANENTES baseado no estágio
+      // I1 (Pinças), I2 (1º Médios), I3 (2º Médios), I4 (Cantos)
+      const permMap: Record<string, boolean> = {
+          I1: [MoultingStage.D2, MoultingStage.D4, MoultingStage.D6, MoultingStage.BC].includes(stage),
+          I2: [MoultingStage.D4, MoultingStage.D6, MoultingStage.BC].includes(stage),
+          I3: [MoultingStage.D6, MoultingStage.BC].includes(stage),
+          I4: [MoultingStage.BC].includes(stage),
+      };
+
+      setTeethData(prev => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const nextData: any = { ...prev };
+
+          Object.keys(nextData).forEach(key => {
+              // Descobre se é I1, I2... baseado no código (ex: 'I1_LEFT')
+              const toothPrefix = key.split('_')[0]; // Pega 'I1'
+              const isPermanent = permMap[toothPrefix];
+
+              // Reseta o dente para SAUDÁVEL e define o tipo correto
+              nextData[key] = {
+                  ...initialToothState, // Zera patologias
+                  isPresent: true,
+                  toothType: isPermanent ? ToothType.PERMANENT : ToothType.DECIDUOUS
+              };
+          });
+
+          return nextData;
       });
-      
-      setFeedback({ open: true, message: 'Avaliação salva com sucesso!', type: 'success' });
-      setTimeout(() => router.push('/pending'), 1000);
-    } catch (error) {
-      console.error(error);
-      setFeedback({ open: true, message: 'Erro ao salvar avaliação.', type: 'error' });
-    } finally {
-      setSaving(false);
-    }
+
+      setFeedback({ open: true, message: `Muda ${stage} aplicada! Dentes atualizados.`, type: 'success' });
   };
+
+  const handleSave = async () => {
+      setSaving(true);
+      try {
+        const teethArray = Object.entries(teethData).map(([code, data]) => ({
+          toothCode: code, ...data
+        }));
+        
+        const payload = {
+          animalId: animal?.id,
+          evaluatorId: 1, 
+          notes: generalNotes,
+          teeth: teethArray
+        };
+
+        if (evaluationId) {
+          await EvaluationService.update(evaluationId, payload);
+          setFeedback({ open: true, message: 'Avaliação atualizada com sucesso!', type: 'success' });
+        } else {
+          await EvaluationService.create(payload);
+          setFeedback({ open: true, message: 'Avaliação criada com sucesso!', type: 'success' });
+        }
+        
+        setTimeout(() => {
+           const source = searchParams.get('source');
+           if (source === 'history') {
+            router.push('/history'); // Volta para o histórico se veio de lá
+          } else {
+          router.push('/pending'); // Caso contrário (fluxo normal), vai para pendentes
+          }
+        }, 1000);
+      } catch (error) {
+        console.error(error);
+        setFeedback({ open: true, message: 'Erro ao salvar avaliação.', type: 'error' });
+      } finally {
+        setSaving(false);
+      }
+    };
 
   const getToothLabel = (code: string) => code.replace('_', ' '); 
   const getMediaUrl = (item: AnimalMedia) => typeof item === 'string' ? item : item.s3UrlPath;
@@ -274,13 +363,16 @@ export default function EvaluationPage() {
         {/* DIREITA */}
         <Grid size={{ xs: 12, md: 7, lg: 8 }} sx={{ height: '100%', overflowY: 'auto', p: 4, bgcolor: '#fff' }}>
             <Container maxWidth="md">
+                
+                {/* --- AQUI ENTRA O NOVO COMPONENTE DE ATALHO --- */}
+                <QuickMoultingSelector onSelect={handleQuickMoulting} />
+
                 <Box mb={4} textAlign="center">
                     <Typography variant="h5" fontWeight={700} gutterBottom color="primary">Odontograma</Typography>
                     <Typography color="text.secondary">Selecione o dente para avaliar</Typography>
                 </Box>
                 
                 <Box mb={4}>
-
                     <DentalArch 
                         //eslint-disable-next-line @typescript-eslint/no-explicit-any
                         teethData={teethData as any} 

@@ -14,13 +14,11 @@ import {
   DefaultValuePipe,
   ParseIntPipe
 } from '@nestjs/common';
-import { UpdateEvaluationDto } from './dto/update-evaluation.dto'; // Descomente se tiver o DTO
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
 
 import { EvaluationService } from './evaluation.service';
-import { CreateEvaluationDto } from './dto/create-evaluation.dto'; // Descomente se tiver o DTO
 
 @Controller('evaluations')
 export class EvaluationController {
@@ -50,7 +48,7 @@ export class EvaluationController {
     @UploadedFiles() files: { frontal?: Express.Multer.File[], vestibular?: Express.Multer.File[] },
     @Body() body: { code: string, breed: string }
   ) {
-    const baseUrl = 'http://localhost:3333'; 
+    const baseUrl = process.env.API_BASE_URL || 'http://localhost:3333'; 
     
     const frontalPath = files.frontal 
       ? `${baseUrl}/uploads/${files.frontal[0].filename}` 
@@ -68,16 +66,24 @@ export class EvaluationController {
   }
 
   @Get('pending')
-  async findPending() {
-    return await this.evaluationService.findPendingEvaluations();
+  async findPending(
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
+    @Query('search') search?: string,
+    @Query('filterFarm') filterFarm?: string,
+  ) {
+    return await this.evaluationService.findPendingEvaluations(page, limit, search, filterFarm);
   }
 
   @Get('history')
   async findHistory(
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
     @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
+    @Query('search') search?: string,
+    @Query('filterFarm') filterFarm?: string,
+    @Query('filterClient') filterClient?: string,
   ) {
-    return await this.evaluationService.findAllHistory(page, limit);
+    return await this.evaluationService.findAllHistory(page, limit, search, filterFarm, filterClient);
   }
 
   @Get('seed') 

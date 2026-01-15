@@ -31,7 +31,6 @@ export class EvaluationService {
   ) {}
 
   // --- 1. CRIAR AVALIAÇÃO ---
-  // --- 1. CRIAR AVALIAÇÃO (COM CORREÇÃO DE ERRO 500 E DUPLICIDADE) ---
   async create(createDto: any): Promise<DentalEvaluation> {
     const animalIdNumber = Number(createDto.animalId);
 
@@ -40,12 +39,10 @@ export class EvaluationService {
     });
     if (!animal) throw new NotFoundException(`Animal não encontrado.`);
 
-    // FIX 1: Tenta achar o avaliador. Se não achar (banco resetado), pega o primeiro Admin.
     let evaluator = await this.userRepository.findOne({ where: { id: createDto.evaluatorId } });
     if (!evaluator) {
         evaluator = await this.userRepository.findOne({ where: { role: 'admin' } });
     }
-    // FIX 1.1: Se não tiver NENHUM usuário, cria um de emergência para não dar Erro 500
     if (!evaluator) {
         evaluator = this.userRepository.create({
             fullName: 'Admin Sistema', email: 'admin@sistema.com', password: '123', role: 'admin', registrationDate: new Date()
@@ -53,21 +50,18 @@ export class EvaluationService {
         await this.userRepository.save(evaluator);
     }
 
-    // FIX 2: Verifica se já existe avaliação HOJE para não duplicar no histórico
     let evaluation = await this.evaluationRepository.findOne({
         where: { animal: { id: animal.id } },
         relations: ['teeth'],
         order: { evaluationDate: 'DESC' }
     });
     
-    // Se for do mesmo dia, EDITAMOS a existente
     const isSameDay = evaluation && new Date().toDateString() === new Date(evaluation.evaluationDate).toDateString();
 
     if (evaluation && isSameDay) {
         evaluation.generalObservations = createDto.notes || evaluation.generalObservations;
         evaluation.evaluationDate = new Date(); // Atualiza hora
     } else {
-        // Se for outro dia, cria nova
         evaluation = this.evaluationRepository.create({
             animal: animal, 
             evaluator: evaluator,
@@ -78,7 +72,6 @@ export class EvaluationService {
     
     const savedEvaluation = await this.evaluationRepository.save(evaluation);
 
-    // Salva os dentes
     if (createDto.teeth && Array.isArray(createDto.teeth)) {
         for (const toothData of createDto.teeth) {
           let tooth = await this.toothRepository.findOne({
@@ -92,7 +85,6 @@ export class EvaluationService {
              });
           }
 
-          // Atualiza dados
           tooth.toothType = toothData.toothType || ToothType.PERMANENT;
           tooth.isPresent = toothData.isPresent !== false;
           tooth.crownReductionLevel = toothData.crownReductionLevel || SeverityScale.NONE;
@@ -118,35 +110,74 @@ export class EvaluationService {
     return this.findOne(savedEvaluation.id);
   }
 
-  // --- 2. LISTAR PENDENTES ---
-  async findPendingEvaluations() {
-    const animals = await this.animalRepository.find({
-       relations: ['dentalEvaluations', 'mediaFiles'], 
-       order: { id: 'DESC' },
-       take: 50
-    });
-    
-    return animals
-      .filter(a => a.dentalEvaluations.length === 0) 
-      .map(a => ({
-        id: a.id.toString(), 
-        code: a.tagCode,     
-        breed: a.breed,
-        farm: a.farm,
-        client: a.client,
-        entryDate: a.collectionDate ? new Date(a.collectionDate).toLocaleDateString('pt-BR') : new Date(a.registrationDate).toLocaleDateString('pt-BR'),
-        media: a.mediaFiles?.map(m => m.s3UrlPath) || []
-      }));
+  // --- 2. PENDENTES COM FILTROS E PAGINAÇÃO ---
+  async findPendingEvaluations(
+      page: number = 1, 
+      limit: number = 20, 
+      search?: string, 
+      filterFarm?: string
+  ) {
+      const query = this.animalRepository.createQueryBuilder('animal')
+        .leftJoinAndSelect('animal.mediaFiles', 'media')
+        .leftJoin('animal.dentalEvaluations', 'evaluation')
+        .where('evaluation.id IS NULL'); 
+
+      if (search) {
+          query.andWhere('(animal.tagCode ILIKE :search OR animal.id::text ILIKE :search)', { search: `%${search}%` });
+      }
+      if (filterFarm) {
+          query.andWhere('animal.farm ILIKE :farm', { farm: `%${filterFarm}%` });
+      }
+
+      const [animals, total] = await query
+        .orderBy('animal.id', 'DESC')
+        .skip((page - 1) * limit)
+        .take(limit)
+        .getManyAndCount();
+      
+      return {
+          data: animals.map(a => ({
+            id: a.id.toString(), 
+            code: a.tagCode,     
+            breed: a.breed,
+            farm: a.farm,
+            client: a.client,
+            entryDate: a.collectionDate ? new Date(a.collectionDate).toLocaleDateString('pt-BR') : 'N/A',
+            media: a.mediaFiles?.map(m => m.s3UrlPath) || []
+          })),
+          meta: { total, page, limit, lastPage: Math.ceil(total / limit) }
+      };
   }
 
-  // --- 3. HISTÓRICO GERAL ---
-  async findAllHistory(page: number = 1, limit: number = 10) {
-    const [evaluations, total] = await this.evaluationRepository.findAndCount({
-        relations: ['animal', 'mediaFiles', 'teeth'],
-        order: { id: 'DESC' },
-        skip: (page - 1) * limit,
-        take: limit
-    });
+// --- 3. HISTÓRICO  ---
+  async findAllHistory(
+      page: number = 1, 
+      limit: number = 10, 
+      search?: string,       
+      filterFarm?: string,   
+      filterClient?: string  
+  ) {
+    const query = this.evaluationRepository.createQueryBuilder('evaluation')
+        .leftJoinAndSelect('evaluation.animal', 'animal')
+        .leftJoinAndSelect('evaluation.mediaFiles', 'mediaFiles')
+        .leftJoinAndSelect('evaluation.teeth', 'teeth');
+
+   
+    if (search) {
+        query.andWhere('(animal.tagCode ILIKE :search OR animal.id::text ILIKE :search)', { search: `%${search}%` });
+    }
+    if (filterFarm) {
+        query.andWhere('animal.farm ILIKE :farm', { farm: `%${filterFarm}%` });
+    }
+    if (filterClient) {
+        query.andWhere('animal.client ILIKE :client', { client: `%${filterClient}%` });
+    }
+
+    const [evaluations, total] = await query
+        .orderBy('evaluation.id', 'DESC')
+        .skip((page - 1) * limit)
+        .take(limit)
+        .getManyAndCount();
 
     return {
       data: evaluations.map(ev => {
@@ -154,12 +185,10 @@ export class EvaluationService {
             ? Math.max(...ev.teeth.map(t => t.fractureLevel)) 
             : 0;
 
-        // ATUALIZADO: Regra de Crítico inclui Recessão Gengival (Dr. Iveraldo)
-        // Lembrando: SeverityScale.SEVERE agora é valor 2 (escala 0-2)
         const isCritical = ev.teeth?.some(t => 
             t.fractureLevel >= SeverityScale.SEVERE || 
             t.pulpitis >= SeverityScale.SEVERE ||
-            t.gingivalRecessionLevel >= SeverityScale.SEVERE // Nova Regra
+            t.gingivalRecessionLevel >= SeverityScale.SEVERE
         );
 
         return {
@@ -167,6 +196,8 @@ export class EvaluationService {
             animalId: ev.animal.id.toString(),
             code: ev.animal.tagCode,
             breed: ev.animal.breed,
+            farm: ev.animal.farm,
+            client: ev.animal.client,
             lastEvaluationDate: ev.evaluationDate,
             media: ev.mediaFiles?.map(m => m.s3UrlPath) || [],
             worstFracture: maxFracture,
@@ -191,42 +222,66 @@ export class EvaluationService {
   }
 
   // --- 5. ATUALIZAR ---
-  async update(id: number, updateDto: any) {
-    const evaluation = await this.findOne(id);
+    async update(id: number, updateDto: any) {
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
 
-    if (updateDto.notes !== undefined) {
-        evaluation.generalObservations = updateDto.notes;
-    }
+    try {
+      const evaluation = await queryRunner.manager.findOne(DentalEvaluation, { where: { id } });
+      if (!evaluation) throw new NotFoundException(`Avaliação #${id} não encontrada.`);
 
-    await this.evaluationRepository.save(evaluation);
+      if (updateDto.notes !== undefined) {
+          evaluation.generalObservations = updateDto.notes;
+          await queryRunner.manager.save(evaluation);
+      }
 
-    if (updateDto.teeth && Array.isArray(updateDto.teeth)) {
-        for (const t of updateDto.teeth) {
-            const tooth = await this.toothRepository.findOne({
-                where: { evaluation: { id: id }, toothCode: t.toothCode }
-            });
+      if (updateDto.teeth && Array.isArray(updateDto.teeth)) {
+          for (const t of updateDto.teeth) {
+              let tooth = await queryRunner.manager.findOne(ToothEvaluation, {
+                  where: { evaluation: { id: id }, toothCode: t.toothCode }
+              });
 
-            if (tooth) {
-                // ATUALIZAÇÃO: Mapeando novos campos e nomes corrigidos
-                if (t.toothType !== undefined) tooth.toothType = t.toothType;
-                if (t.fractureLevel !== undefined) tooth.fractureLevel = t.fractureLevel;
-                if (t.lingualWear !== undefined) tooth.lingualWear = t.lingualWear;
-                
-                // MUDANÇA: _mm para _level
-                if (t.crownReductionLevel !== undefined) tooth.crownReductionLevel = t.crownReductionLevel;
-                if (t.gingivalRecessionLevel !== undefined) tooth.gingivalRecessionLevel = t.gingivalRecessionLevel;
-                
-                if (t.pulpitis !== undefined) tooth.pulpitis = t.pulpitis;
-                if (t.dentalCalculus !== undefined) tooth.dentalCalculus = t.dentalCalculus;
-                if (t.caries !== undefined) tooth.caries = t.caries;
-                
-                // MUDANÇA: Cores
-                if (t.abnormalColor !== undefined) tooth.abnormalColor = t.abnormalColor;
-                if (t.gingivitisColor !== undefined) tooth.gingivitisColor = t.gingivitisColor;
-                
-                await this.toothRepository.save(tooth);
-            }
-        }
+              if (!tooth) {
+                  tooth = queryRunner.manager.create(ToothEvaluation, {
+                      evaluation: evaluation,
+                      toothCode: t.toothCode
+                  });
+              }
+
+              Object.assign(tooth, {
+                  toothType: t.toothType ?? tooth.toothType,
+                  isPresent: t.isPresent ?? tooth.isPresent,
+
+                  fractureLevel: t.fractureLevel ?? tooth.fractureLevel,
+                  pulpitis: t.pulpitis ?? tooth.pulpitis,
+                  gingivalRecessionLevel: t.gingivalRecessionLevel ?? tooth.gingivalRecessionLevel,
+                  crownReductionLevel: t.crownReductionLevel ?? tooth.crownReductionLevel,
+
+                  lingualWear: t.lingualWear ?? tooth.lingualWear,
+                  periodontalLesions: t.periodontalLesions ?? tooth.periodontalLesions,
+                  dentalCalculus: t.dentalCalculus ?? tooth.dentalCalculus,
+                  caries: t.caries ?? tooth.caries,
+
+                  vitrifiedBorder: t.vitrifiedBorder ?? tooth.vitrifiedBorder,
+                  pulpChamberExposure: t.pulpChamberExposure ?? tooth.pulpChamberExposure,
+                  gingivitisEdema: t.gingivitisEdema ?? tooth.gingivitisEdema,
+
+                  gingivitisColor: t.gingivitisColor ?? tooth.gingivitisColor,
+                  abnormalColor: t.abnormalColor ?? tooth.abnormalColor,
+              });
+
+              await queryRunner.manager.save(tooth);
+          }
+      }
+
+      await queryRunner.commitTransaction();
+
+    } catch (err) {
+      await queryRunner.rollbackTransaction();
+      throw err;
+    } finally {
+      await queryRunner.release();
     }
 
     return this.findOne(id);
@@ -261,9 +316,9 @@ export class EvaluationService {
   async getDashboardStats() {
     const totalAnimals = await this.animalRepository.count();
     const totalEvaluations = await this.evaluationRepository.count();
-    const pendingList = await this.findPendingEvaluations();
     
-    // ATUALIZADO: KPI Crítico também conta Recessão Gengival
+    const pendingResult = await this.findPendingEvaluations(1, 1);
+    
     const criticalQuery = this.evaluationRepository.createQueryBuilder('eval')
             .innerJoin('eval.teeth', 'tooth')
             .where('tooth.fracture_level >= :level', { level: SeverityScale.SEVERE })
@@ -275,7 +330,7 @@ export class EvaluationService {
     return {
       totalAnimals,
       totalEvaluations,
-      pendingEvaluations: pendingList.length,
+      pendingEvaluations: pendingResult.meta.total, 
       criticalCases,
     };
   }

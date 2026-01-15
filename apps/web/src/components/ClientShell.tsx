@@ -6,9 +6,19 @@ import Sidebar from './Sidebar';
 export default function ClientShell({ children }: { children: React.ReactNode }) {
   return (
     <ThemeRegistry>
-       <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#f1f5f9' }}>
+       <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#f8fafc' }}>
+          
           <Sidebar />
-          <Box component="main" sx={{ flexGrow: 1, p: 4, overflowX: 'hidden' }}>
+
+          <Box 
+            component="main" 
+            sx={{ 
+              flexGrow: 1, 
+              p: 1, 
+              width: '100%', 
+              overflowX: 'hidden'
+            }}
+          >
             {children}
           </Box>
        </Box>
