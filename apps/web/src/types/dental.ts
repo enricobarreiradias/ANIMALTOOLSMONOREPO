@@ -69,3 +69,4 @@ export enum MoultingStage {
   D6 = '6D', // 6 Dentes (Segundos Médios Permanentes)
   BC = 'BC', // Boca Cheia (Todos Permanentes)
 }
+

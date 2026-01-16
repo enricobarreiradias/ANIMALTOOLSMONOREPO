@@ -3,11 +3,11 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateAnimalDto } from './dto/create-animal.dto';
 import { UpdateAnimalDto } from './dto/update-animal.dto';
-import { ExternalAnimalDto } from './dto/external-integration.dto'; // <-- Importe o DTO
+import { ExternalAnimalDto } from './dto/external-integration.dto'; 
 import { Animal } from '../../../../libs/data/src/entities/animal.entity';
-import { Media } from '../../../../libs/data/src/entities/media.entity'; // <-- Importe a Entidade Media
-import { PhotoType } from '../../../../libs/data/src/enums/dental-evaluation.enums'; // <-- Importe o Enum
-import { DeepPartial } from 'typeorm'; // Certifique-se de importar isso no topo
+import { Media } from '../../../../libs/data/src/entities/media.entity'; 
+import { PhotoType } from '../../../../libs/data/src/enums/dental-evaluation.enums'; 
+import { DeepPartial } from 'typeorm'; 
 
 @Injectable()
 export class AnimalService {
@@ -15,18 +15,18 @@ export class AnimalService {
     @InjectRepository(Animal)
     private animalRepository: Repository<Animal>,
 
-    @InjectRepository(Media) // <-- Injeção do Repositório de Mídia
+    @InjectRepository(Media) 
     private mediaRepository: Repository<Media>,
   ) {}
 
-  // 1. CREATE (Método Padrão)
+  // 1. CREATE 
   create(createAnimalDto: CreateAnimalDto) {
     const animal = this.animalRepository.create(createAnimalDto);
     return this.animalRepository.save(animal);
   }
 
   // --- NOVO MÉTODO: IMPORTAÇÃO EXTERNA ---
-  // Este método recebe o JSON "feio" do Renato e salva bonitinho no nosso banco
+  // Este método recebe o JSON feio do Renato e salva bonitinho no nosso banco
   async createFromExternal(data: ExternalAnimalDto) {
     const newAnimal = this.animalRepository.create({
       tagCode: data.tagCode,
@@ -69,27 +69,58 @@ export class AnimalService {
 
   // 3. FIND ONE 
   async findOne(id: number) {
-    const animal = await this.animalRepository.findOne({ 
+    const animal = await this.animalRepository.findOne({
       where: { id },
-      relations: ['mediaFiles'] 
+      relations: ['mediaFiles'],
     });
-    
+
     if (!animal) {
-      throw new NotFoundException(`Animal #${id} não encontrado.`);
+      throw new NotFoundException(`Animal com ID ${id} não encontrado.`);
     }
-    return animal;
+
+    const geoMedia = animal.mediaFiles?.find(m => m.latitude && m.longitude);
+    const coordinates = geoMedia 
+      ? { lat: geoMedia.latitude, lng: geoMedia.longitude } 
+      : undefined;
+
+    return {
+      id: animal.id.toString(),
+      code: animal.tagCode, 
+      breed: animal.breed,
+      farm: animal.farm,
+      client: animal.client,
+      collectionDate: animal.collectionDate,
+      
+      age: animal.age, 
+      chip: animal.chip,
+      sisbov: animal.sisbovNumber, 
+      currentWeight: animal.currentWeight,
+      lot: animal.lot,
+      birthDate: animal.birthDate,
+      
+      coordinates: coordinates,
+
+      media: animal.mediaFiles?.map(m => ({
+         s3UrlPath: m.s3UrlPath 
+      })) || [],
+    };
   }
 
   // 4. UPDATE
   async update(id: number, updateAnimalDto: UpdateAnimalDto) {
-    await this.findOne(id); // Garante que existe
+    await this.findOne(id); 
     await this.animalRepository.update(id, updateAnimalDto);
     return this.findOne(id);
   }
 
   // 5. REMOVE
-  async remove(id: number) {
-    const animal = await this.findOne(id);
-    return this.animalRepository.remove(animal);
+async remove(id: number) {
+    const animalEntity = await this.animalRepository.findOneBy({ id });
+
+    if (!animalEntity) {
+        throw new NotFoundException(`Animal #${id} não encontrado.`);
+    }
+
+    return this.animalRepository.remove(animalEntity);
   }
 }

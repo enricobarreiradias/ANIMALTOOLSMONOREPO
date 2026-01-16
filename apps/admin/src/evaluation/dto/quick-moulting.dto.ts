@@ -13,5 +13,6 @@ export class QuickMoultingDto {
 
   @ApiProperty({ enum: MoultingStage, description: 'Estágio da muda (Ex: DL, D2, BC)' })
   @IsEnum(MoultingStage)
+  @IsString() 
   stage: MoultingStage;
 }

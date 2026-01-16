@@ -10,12 +10,12 @@ import {
 } from '@mui/material';
 import { 
   Save, ArrowBack, CheckCircle, Warning, LocationOn, 
-  CalendarToday, Pets, Person
+  CalendarToday, Pets, Person, OpenInNew
 } from '@mui/icons-material';
 import { AnimalService, EvaluationService } from '../../../services/api';
 import DentalArch from '../../../components/DentalArch';
-import QuickMoultingSelector from '../../../components/QuickMoultingSelector'; // Importa só o componente
-import { ToothCode, MoultingStage } from '../../../types/dental'; // Importa os tipos e enums
+import QuickMoultingSelector from '../../../components/QuickMoultingSelector'; 
+import { ToothCode, MoultingStage } from '../../../types/dental'; 
 
 // --- ENUMS E TIPOS ---
 enum SeverityScale {
@@ -45,7 +45,15 @@ interface Animal {
   farm?: string;
   client?: string;
   location?: string;
-  collectionDate?: string; 
+  collectionDate?: string;
+  // Mantemos opcional aqui (?) para o TypeScript não quebrar se a API falhar,
+  // mas na tela vamos tratar como se fosse obrigatório mostrar o campo.
+  sisbov?: string;
+  chip?: string;
+  currentWeight?: number;
+  lot?: string;
+  birthDate?: string;
+  coordinates?: { lat: number; lng: number };
 }
 
 // ESTADO INICIAL
@@ -155,7 +163,6 @@ export default function EvaluationPage() {
     }));
   };
 
-  // --- LÓGICA DO ATALHO DE MUDA (TIAGO) ---
   const handleQuickMoulting = async (stage: MoultingStage) => {
         if (!animal) return;
 
@@ -224,9 +231,9 @@ export default function EvaluationPage() {
         setTimeout(() => {
            const source = searchParams.get('source');
            if (source === 'history') {
-            router.push('/history'); // Volta para o histórico se veio de lá
+            router.push('/history'); 
           } else {
-          router.push('/pending'); // Caso contrário (fluxo normal), vai para pendentes
+          router.push('/pending'); 
           }
         }, 1000);
       } catch (error) {
@@ -318,7 +325,7 @@ export default function EvaluationPage() {
       {/* CONTEÚDO SPLIT */}
       <Grid container sx={{ flex: 1, overflow: 'hidden' }}>
         
-        {/* ESQUERDA */}
+        {/* ESQUERDA - SIDEBAR DE DADOS */}
         <Grid size={{ xs: 12, md: 5, lg: 4 }} sx={{ height: '100%', overflowY: 'auto', borderRight: '1px solid #e0e0e0', bgcolor: '#f5f5f5', p: 3 }}>
             <Typography variant="subtitle2" fontWeight="bold" gutterBottom sx={{ mb: 2, textTransform: 'uppercase', color: 'text.secondary' }}>
                 Evidências Visuais ({animal.media?.length || 0})
@@ -337,35 +344,110 @@ export default function EvaluationPage() {
                     <Box height={200} display="flex" alignItems="center" justifyContent="center" bgcolor="#e0e0e0" borderRadius={2}><Typography color="text.secondary">Sem imagens</Typography></Box>
                 )}
 
-                <Card variant="outlined">
-                    <CardContent>
-                        <Typography variant="h6" gutterBottom display="flex" alignItems="center" gap={1}><Pets fontSize="small" /> Dados do Animal</Typography>
-                        <Stack spacing={1.5}>
-                            <Box display="flex" justifyContent="space-between"><Typography color="text.secondary">ID / Brinco</Typography><Typography fontWeight="bold">{animal.code}</Typography></Box>
-                            <Divider />
-                            <Box display="flex" justifyContent="space-between"><Typography color="text.secondary">Raça</Typography><Typography fontWeight="bold">{animal.breed}</Typography></Box>
-                            <Divider />
-                            <Box display="flex" justifyContent="space-between"><Typography color="text.secondary">Idade</Typography><Typography fontWeight="bold">{animal.age ? `${animal.age} meses` : 'N/A'}</Typography></Box>
-                            <Divider />
-                            <Box display="flex" justifyContent="space-between">
-                                <Typography color="text.secondary" display="flex" gap={0.5}><LocationOn fontSize="small"/> Fazenda</Typography>
-                                <Typography fontWeight="bold">{animal.farm || 'Não inf.'}</Typography>
-                            </Box>
-                            <Divider />
-                            <Box display="flex" justifyContent="space-between">
-                                <Typography color="text.secondary" display="flex" gap={0.5}><Person fontSize="small"/> Cliente</Typography>
-                                <Typography fontWeight="bold">{animal.client || 'Não inf.'}</Typography>
-                            </Box>
-                            <Divider />
-                            <Box display="flex" justifyContent="space-between">
-                                <Typography color="text.secondary" display="flex" gap={0.5}><CalendarToday fontSize="small"/> Coleta</Typography>
-                                <Typography fontWeight="bold">
-                                    {animal.collectionDate ? new Date(animal.collectionDate).toLocaleDateString('pt-BR') : 'N/A'}
+                <Card variant="outlined" sx={{ mt: 3 }}>
+                <CardContent>
+                    <Typography variant="h6" gutterBottom display="flex" alignItems="center" gap={1}>
+                        <Pets fontSize="small" /> Dados do Animal
+                    </Typography>
+                    
+                    <Stack spacing={1.5}>
+                        {/* 1. ID VISUAL (BRINCO) */}
+                        <Box display="flex" justifyContent="space-between">
+                            <Typography color="text.secondary">ID Visual (Brinco)</Typography>
+                            <Typography fontWeight="bold" variant="body1">{animal.code}</Typography>
+                        </Box>
+                        <Divider />
+
+                        {/* 2. SISBOV */}
+                        <Box display="flex" justifyContent="space-between">
+                            <Typography color="text.secondary">SISBOV</Typography>
+                            <Typography fontWeight="bold" sx={{ fontFamily: 'monospace', color: animal.sisbov ? 'inherit' : 'text.disabled' }}>
+                                {animal.sisbov || '---'}
+                            </Typography>
+                        </Box>
+                        <Divider />
+
+                        {/* 3. CHIP  */}
+                        <Box display="flex" justifyContent="space-between">
+                            <Typography color="text.secondary">Chip Eletrônico</Typography>
+                            <Typography fontWeight="bold" sx={{ fontFamily: 'monospace', color: animal.chip ? 'inherit' : 'text.disabled' }}>
+                                {animal.chip || '---'}
+                            </Typography>
+                        </Box>
+                        <Divider />
+                        
+                        {/* 4. RAÇA */}
+                        <Box display="flex" justifyContent="space-between">
+                            <Typography color="text.secondary">Raça</Typography>
+                            <Typography fontWeight="bold">{animal.breed}</Typography>
+                        </Box>
+                        <Divider />
+
+                        {/* 5. PESO ATUAL */}
+                        <Box display="flex" justifyContent="space-between" alignItems="center">
+                            <Typography color="text.secondary">Peso Atual</Typography>
+                            {animal.currentWeight ? (
+                                <Chip label={`${animal.currentWeight} kg`} size="small" color="success" variant="outlined" />
+                            ) : (
+                                <Typography color="text.disabled" variant="body2">Não informado</Typography>
+                            )}
+                        </Box>
+                        <Divider />
+
+                        {/* 6. IDADE CALCULADA */}
+                        <Box display="flex" justifyContent="space-between">
+                            <Typography color="text.secondary">Idade (Calc.)</Typography>
+                            <Typography fontWeight="bold">{animal.age ? `${animal.age} meses` : 'N/A'}</Typography>
+                        </Box>
+                        <Divider />
+                        
+                        {/* 7. LOCALIZAÇÃO E MAPAS */}
+                        <Box display="flex" justifyContent="space-between" alignItems="center">
+                            <Typography color="text.secondary" display="flex" gap={0.5}>
+                                <LocationOn fontSize="small"/> Localização
+                            </Typography>
+                            
+                            <Box textAlign="right">
+                                <Typography fontWeight="bold" variant="body2">{animal.farm || 'Não inf.'}</Typography>
+                                {/* LOTE  */}
+                                <Typography variant="caption" display="block" color={animal.lot ? 'text.secondary' : 'text.disabled'}>
+                                   Lote: {animal.lot || '---'}
                                 </Typography>
+                                
+                                {/* Link do Mapa Corrigido */}
+                                {animal.coordinates && (
+                                  <Button 
+                                    size="small" 
+                                    startIcon={<OpenInNew sx={{ fontSize: 14 }} />}
+                                    href={`https://www.google.com/maps?q=${animal.coordinates.lat},${animal.coordinates.lng}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    sx={{ mt: 0.5, textTransform: 'none', fontSize: '0.75rem', p: 0 }}
+                                  >
+                                    Ver no Mapa
+                                  </Button>
+                                )}
                             </Box>
-                        </Stack>
-                    </CardContent>
-                </Card>
+                        </Box>
+
+                        <Divider />
+                        
+                        <Box display="flex" justifyContent="space-between">
+                            <Typography color="text.secondary" display="flex" gap={0.5}><Person fontSize="small"/> Cliente</Typography>
+                            <Typography fontWeight="bold">{animal.client || 'Não inf.'}</Typography>
+                        </Box>
+
+                        <Divider />
+                        
+                        <Box display="flex" justifyContent="space-between">
+                            <Typography color="text.secondary" display="flex" gap={0.5}><CalendarToday fontSize="small"/> Coleta</Typography>
+                            <Typography fontWeight="bold">
+                                {animal.collectionDate ? new Date(animal.collectionDate).toLocaleDateString('pt-BR') : 'N/A'}
+                            </Typography>
+                        </Box>
+                    </Stack>
+                </CardContent>
+            </Card>
                 <TextField fullWidth label="Observações Gerais do Caso" multiline rows={4} value={generalNotes} onChange={(e) => setGeneralNotes(e.target.value)} variant="filled" helperText="Anotações gerais do animal" />
             </Stack>
         </Grid>
@@ -374,7 +456,6 @@ export default function EvaluationPage() {
         <Grid size={{ xs: 12, md: 7, lg: 8 }} sx={{ height: '100%', overflowY: 'auto', p: 4, bgcolor: '#fff' }}>
             <Container maxWidth="md">
                 
-                {/* --- AQUI ENTRA O NOVO COMPONENTE DE ATALHO --- */}
                 <QuickMoultingSelector onSelect={handleQuickMoulting} />
 
                 <Box mb={4} textAlign="center">
@@ -400,7 +481,6 @@ export default function EvaluationPage() {
                             </Box>
                         ) : (
                             <Box className="fade-in" key={selectedTooth}>
-                                {/* HEADER DO DENTE */}
                                 <Box display="flex" justifyContent="space-between" alignItems="center" mb={3} pb={2} borderBottom="1px solid #f0f0f0">
                                     <Box>
                                         <Typography variant="caption" color="primary" fontWeight="bold">EDITANDO</Typography>
@@ -411,8 +491,6 @@ export default function EvaluationPage() {
 
                                 {currentToothData?.isPresent ? (
                                     <Stack spacing={4}>
-                                        
-                                        {/* SELETOR DE TIPO DE DENTE */}
                                         <Box bgcolor="#f8fafc" p={2} borderRadius={2} border="1px solid #e2e8f0">
                                             <Typography variant="caption" fontWeight="bold" color="text.secondary" gutterBottom display="block">ESTÁGIO DE DESENVOLVIMENTO</Typography>
                                             <ToggleButtonGroup
@@ -428,7 +506,6 @@ export default function EvaluationPage() {
                                             </ToggleButtonGroup>
                                         </Box>
 
-                                        {/* BLOCO 1: PARÂMETROS CRÍTICOS */}
                                         <Box>
                                             <Box display="flex" alignItems="center" gap={1} mb={2}>
                                                 <Avatar sx={{ bgcolor: 'error.light', width: 24, height: 24, fontSize: 12 }}>!</Avatar>
@@ -452,7 +529,6 @@ export default function EvaluationPage() {
 
                                         <Divider />
 
-                                        {/* BLOCO 2: OUTROS INDICADORES */}
                                         <Box>
                                             <Box display="flex" alignItems="center" gap={1} mb={2}>
                                                 <Avatar sx={{ bgcolor: 'primary.light', width: 24, height: 24, fontSize: 12 }}>2</Avatar>
@@ -472,7 +548,6 @@ export default function EvaluationPage() {
                                                     <SeveritySelector label="Cárie" value={currentToothData.caries} onChange={(v) => updateTooth('caries', v)} />
                                                 </Grid>
                                                 
-                                                {/* CORES */}
                                                 <Grid size={{ xs: 12, sm: 6 }}>
                                                     <ColorSelector label="Cor da Gengiva" value={currentToothData.gingivitisColor} onChange={(v) => updateTooth('gingivitisColor', v)} />
                                                 </Grid>
@@ -482,7 +557,6 @@ export default function EvaluationPage() {
                                             </Grid>
                                         </Box>
 
-                                        {/* DETALHES MENORES */}
                                         <Box bgcolor="#f9fafb" p={2} borderRadius={2}>
                                             <Typography variant="caption" color="text.secondary" display="block" mb={2}>DETALHES ESPECÍFICOS </Typography>
                                             <Grid container spacing={2}>
