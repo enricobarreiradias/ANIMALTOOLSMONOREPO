@@ -111,6 +111,7 @@ export class EvaluationService {
   async applyQuickMoulting(dto: QuickMoultingDto) {
       const stage = dto.stage;
       
+      // Regras de quais dentes são permanentes baseados no estágio
       const permanentRules = {
         I1: [MoultingStage.D2, MoultingStage.D4, MoultingStage.D6, MoultingStage.BC].includes(stage),
         I2: [MoultingStage.D4, MoultingStage.D6, MoultingStage.BC].includes(stage),
@@ -118,34 +119,69 @@ export class EvaluationService {
         I4: [MoultingStage.BC].includes(stage),
       };
 
+      // 1. Busca a avaliação existente para não perder dados
+      const existingEvaluation = await this.evaluationRepository.findOne({
+          where: { animal: { id: Number(dto.animalId) } },
+          relations: ['teeth'],
+          order: { evaluationDate: 'DESC' }
+      });
+
       const teethToSave = Object.values(ToothCode).map(code => {
         const prefix = code.split('_')[0]; 
         const isPermanent = permanentRules[prefix] || false;
+        const newToothType = isPermanent ? ToothType.PERMANENT : ToothType.DECIDUOUS;
 
-        return {
-          toothCode: code,
-          isPresent: true,
-          toothType: isPermanent ? ToothType.PERMANENT : ToothType.DECIDUOUS,
-          fractureLevel: SeverityScale.NONE,
-          pulpitis: SeverityScale.NONE,
-          gingivalRecessionLevel: SeverityScale.NONE,
-          crownReductionLevel: SeverityScale.NONE,
-          lingualWear: SeverityScale.NONE,
-          periodontalLesions: SeverityScale.NONE,
-          dentalCalculus: SeverityScale.NONE,
-          caries: SeverityScale.NONE,
-          vitrifiedBorder: SeverityScale.NONE,
-          pulpChamberExposure: SeverityScale.NONE,
-          gingivitisEdema: SeverityScale.NONE,
-          gingivitisColor: ColorScale.NORMAL,
-          abnormalColor: ColorScale.NORMAL,
-        };
+        // Verifica se já existe dados para este dente na avaliação atual/última
+        const existingTooth = existingEvaluation?.teeth?.find(t => t.toothCode === code);
+
+        if (existingTooth) {
+            // CENÁRIO 1: Dente já existe. 
+            return {
+                toothCode: code,
+                toothType: newToothType, 
+                isPresent: existingTooth.isPresent,
+                
+                fractureLevel: existingTooth.fractureLevel,
+                pulpitis: existingTooth.pulpitis,
+                gingivalRecessionLevel: existingTooth.gingivalRecessionLevel,
+                crownReductionLevel: existingTooth.crownReductionLevel,
+                lingualWear: existingTooth.lingualWear,
+                periodontalLesions: existingTooth.periodontalLesions,
+                dentalCalculus: existingTooth.dentalCalculus,
+                caries: existingTooth.caries,
+                vitrifiedBorder: existingTooth.vitrifiedBorder,
+                pulpChamberExposure: existingTooth.pulpChamberExposure,
+                gingivitisEdema: existingTooth.gingivitisEdema,
+                gingivitisColor: existingTooth.gingivitisColor,
+                abnormalColor: existingTooth.abnormalColor,
+            };
+        } else {
+            // CENÁRIO 2: Dente não existia (ou é uma avaliação nova do zero)
+            return {
+                toothCode: code,
+                toothType: newToothType,
+                isPresent: true,
+                fractureLevel: SeverityScale.NONE,
+                pulpitis: SeverityScale.NONE,
+                gingivalRecessionLevel: SeverityScale.NONE,
+                crownReductionLevel: SeverityScale.NONE,
+                lingualWear: SeverityScale.NONE,
+                periodontalLesions: SeverityScale.NONE,
+                dentalCalculus: SeverityScale.NONE,
+                caries: SeverityScale.NONE,
+                vitrifiedBorder: SeverityScale.NONE,
+                pulpChamberExposure: SeverityScale.NONE,
+                gingivitisEdema: SeverityScale.NONE,
+                gingivitisColor: ColorScale.NORMAL,
+                abnormalColor: ColorScale.NORMAL,
+            };
+        }
       });
 
       return this.create({
         animalId: dto.animalId,
         evaluatorId: dto.evaluatorId,
-        notes: `Muda Rápida aplicada: ${stage}`, 
+        notes: existingEvaluation ? existingEvaluation.generalObservations : '',
         teeth: teethToSave
       });
   }

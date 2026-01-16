@@ -10,13 +10,11 @@ export class ExternalPhotoDto {
   @IsString()
   driveLink: string;
 
-  // O Renato mandou "latitude_latitude". Vamos corrigir para "latitude"
   @Expose({ name: 'latitude_latitude' }) 
   @IsNumber()
   @IsOptional()
   latitude?: number;
 
-  // O Renato mandou "latitude_longitude". Vamos corrigir para "longitude"
   @Expose({ name: 'latitude_longitude' })
   @IsNumber()
   @IsOptional()
@@ -38,30 +36,82 @@ export class ExternalAnimalDto {
   @IsOptional()
   sisbov?: string;
 
+  // --- NOVOS CAMPOS MAPEADOS ---
+
+  @Expose({ name: 'categoria_id' })
+  @IsNumber()
+  @IsOptional()
+  categoryId?: number;
+
+  @Expose({ name: 'nome_categoria_id' })
+  @IsString()
+  @IsOptional()
+  categoryName?: string;
+
   @Expose({ name: 'data_de_nascimento' })
   @IsDateString() 
   @IsOptional()
   birthDate?: string;
 
-  @Expose({ name: 'peso_atual' })
+  @Expose({ name: 'raca_id' })
   @IsNumber()
   @IsOptional()
-  weight?: number;
+  breedId?: number;
 
   @Expose({ name: 'nome_raca_id' })
   @IsString()
   @IsOptional()
   breedName?: string;
 
+  @Expose({ name: 'pelagem_id' })
+  @IsNumber()
+  @IsOptional()
+  coatId?: number;
+
+  @Expose({ name: 'nome_pelagem_id' })
+  @IsString()
+  @IsOptional()
+  coatName?: string;
+
+  @Expose({ name: 'peso_atual' })
+  @IsNumber()
+  @IsOptional()
+  weight?: number;
+
+  @Expose({ name: 'score' })
+  @IsNumber()
+  @IsOptional()
+  score?: number;
+
   @Expose({ name: 'nome_centro_de_custo_id' })
   @IsString()
   @IsOptional()
   farmName?: string;
 
+  @Expose({ name: 'nome_local_de_estoque_id' })
+  @IsString()
+  @IsOptional()
+  locationName?: string;
+
   @Expose({ name: 'nome_lote_id' })
   @IsString()
   @IsOptional()
   lotName?: string;
+
+  @Expose({ name: 'data_de_entrada_criado' })
+  @IsString()
+  @IsOptional()
+  entryDateRaw?: string;
+
+  @Expose({ name: 'horário_de_entrada_criado' })
+  @IsString()
+  @IsOptional()
+  entryTimeRaw?: string;
+
+  @Expose({ name: 'status' })
+  @IsString()
+  @IsOptional()
+  status?: string;
 
   @Expose({ name: 'fotos' })
   @IsArray()

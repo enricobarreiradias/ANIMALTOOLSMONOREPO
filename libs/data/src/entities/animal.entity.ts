@@ -49,6 +49,31 @@ export class Animal {
   @Column({ name: 'collection_date', type: 'timestamp', nullable: true })
   collectionDate: Date | null;
 
+  @Column({ type: 'float', nullable: true, name: 'body_score' })
+  bodyScore: number | null; // Mapeia para "score"
+
+  @Column({ type: 'varchar', nullable: true, name: 'coat_color' })
+  coatColor: string | null; // Mapeia para "nome_pelagem_id"
+
+  @Column({ type: 'varchar', nullable: true })
+  category: string | null; // Mapeia para "nome_categoria_id"
+
+  @Column({ type: 'varchar', nullable: true })
+  status: string | null; // Mapeia para "status"
+
+  @Column({ type: 'timestamp', nullable: true, name: 'entry_date' })
+  entryDate: Date | null; // Junção de data + hora de entrada
+
+  // Campos de IDs externos 
+  @Column({ type: 'int', nullable: true, name: 'external_category_id' })
+  externalCategoryId: number | null;
+
+  @Column({ type: 'int', nullable: true, name: 'external_breed_id' })
+  externalBreedId: number | null;
+
+  @Column({ type: 'int', nullable: true, name: 'external_coat_id' })
+  externalCoatId: number | null;
+
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

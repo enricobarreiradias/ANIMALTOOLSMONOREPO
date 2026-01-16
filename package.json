@@ -14,7 +14,8 @@
     "build:admin": "yarn prebuild && nest build admin",
     "build:api": "yarn prebuild && nest build api",
     "build:external-api": "yarn prebuild && nest build external-api",
-    "set-dev-env-variables": "cross-env NODE_ENV=development ENABLE_DEV_ENV=1 ENABLE_DEBUG=1",    "set-dev-aws-env-variables": "NODE_OPTIONS=--openssl-legacy-provider NODE_ENV=development-aws ENABLE_DEV_ENV=1",
+    "set-dev-env-variables": "cross-env NODE_ENV=development ENABLE_DEV_ENV=1 ENABLE_DEBUG=1",
+    "set-dev-aws-env-variables": "NODE_OPTIONS=--openssl-legacy-provider NODE_ENV=development-aws ENABLE_DEV_ENV=1",
     "set-dev-aws-env-variables-windows": "cross-env NODE_ENV=development-aws cross-env ENABLE_DEV_ENV=1",
     "set-prod-aws-env-variables": "NODE_ENV=production",
     "start": "node dist/main.js",
@@ -55,6 +56,7 @@
     "node": ">=24"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.970.0",
     "@nestjs/common": "^11.1.9",
     "@nestjs/config": "^4.0.2",
     "@nestjs/core": "^11.1.9",
@@ -62,6 +64,7 @@
     "@nestjs/serve-static": "^5.0.4",
     "@nestjs/swagger": "^11.2.3",
     "@nestjs/typeorm": "^11.0.0",
+    "axios": "^1.13.2",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.2",
     "config": "^4.1.1",

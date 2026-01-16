@@ -34,7 +34,10 @@ enum ToothType {
   PERMANENT = 'PERMANENT'  // Permanente
 }
 
-type AnimalMedia = { s3UrlPath: string } | string;
+type AnimalMedia = { 
+  s3UrlPath: string; 
+  originalDriveUrl?: string; 
+} | string;
 
 interface Animal {
   id: string;
@@ -46,14 +49,17 @@ interface Animal {
   client?: string;
   location?: string;
   collectionDate?: string;
-  // Mantemos opcional aqui (?) para o TypeScript não quebrar se a API falhar,
-  // mas na tela vamos tratar como se fosse obrigatório mostrar o campo.
   sisbov?: string;
   chip?: string;
   currentWeight?: number;
   lot?: string;
   birthDate?: string;
   coordinates?: { lat: number; lng: number };
+  category?: string;
+  coatColor?: string;
+  bodyScore?: number;
+  status?: string;
+  entryDate?: string;
 }
 
 // ESTADO INICIAL
@@ -245,8 +251,15 @@ export default function EvaluationPage() {
     };
 
   const getToothLabel = (code: string) => code.replace('_', ' '); 
-  const getMediaUrl = (item: AnimalMedia) => typeof item === 'string' ? item : item.s3UrlPath;
-
+  const getMediaUrl = (item: AnimalMedia) => {
+      if (typeof item === 'string') return item;
+      
+      // Tenta o S3. Se for vazio ou nulo, tenta o Drive. Se não tiver nada, retorna null.
+      if (item.s3UrlPath && item.s3UrlPath !== '') return item.s3UrlPath;
+      if (item.originalDriveUrl && item.originalDriveUrl !== '') return item.originalDriveUrl;
+      
+      return null; // Retorna null para o React não renderizar src=""
+    };
   // --- COMPONENTES VISUAIS ---
 
   const SeveritySelector = ({ label, value, onChange }: { label: string, value: number, onChange: (v: number) => void }) => (
@@ -335,7 +348,20 @@ export default function EvaluationPage() {
                     animal.media.map((mediaItem, index) => (
                         <Card key={index} elevation={3}>
                             <Box sx={{ position: 'relative', bgcolor: '#000', minHeight: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <img src={getMediaUrl(mediaItem)} alt={`Evidência ${index + 1}`} style={{ width: '100%', maxHeight: '500px', objectFit: 'contain' }} />
+    
+                                {/* LÓGICA DE PROTEÇÃO */}
+                                {getMediaUrl(mediaItem) ? (
+                                    <img 
+                                        src={getMediaUrl(mediaItem) as string} 
+                                        alt={`Evidência ${index + 1}`} 
+                                        style={{ width: '100%', maxHeight: '500px', objectFit: 'contain' }} 
+                                    />
+                                ) : (
+                                    <Typography variant="caption" color="white">
+                                        Imagem indisponível
+                                    </Typography>
+                                )}
+
                                 <Chip label={index === 0 ? "Frontal" : "Lateral / Lingual"} size="small" sx={{ position: 'absolute', top: 10, left: 10, bgcolor: 'rgba(255,255,255,0.9)' }} />
                             </Box>
                         </Card>
@@ -383,6 +409,20 @@ export default function EvaluationPage() {
                         </Box>
                         <Divider />
 
+                        {/* NOVO: CATEGORIA */}
+                        <Box display="flex" justifyContent="space-between">
+                            <Typography color="text.secondary">Categoria</Typography>
+                            <Typography fontWeight="bold">{animal.category || '---'}</Typography>
+                        </Box>
+                        <Divider />
+
+                        {/* NOVO: PELAGEM */}
+                        <Box display="flex" justifyContent="space-between">
+                            <Typography color="text.secondary">Pelagem</Typography>
+                            <Typography fontWeight="bold">{animal.coatColor || '---'}</Typography>
+                        </Box>
+                        <Divider />
+
                         {/* 5. PESO ATUAL */}
                         <Box display="flex" justifyContent="space-between" alignItems="center">
                             <Typography color="text.secondary">Peso Atual</Typography>
@@ -394,6 +434,17 @@ export default function EvaluationPage() {
                         </Box>
                         <Divider />
 
+                        {/* NOVO: SCORE CORPORAL */}
+                        <Box display="flex" justifyContent="space-between" alignItems="center">
+                            <Typography color="text.secondary">Score Corporal</Typography>
+                            {animal.bodyScore ? (
+                                <Chip label={animal.bodyScore} size="small" color="primary" variant="filled" />
+                            ) : (
+                                <Typography color="text.disabled" variant="body2">---</Typography>
+                            )}
+                        </Box>
+                        <Divider />
+
                         {/* 6. IDADE CALCULADA */}
                         <Box display="flex" justifyContent="space-between">
                             <Typography color="text.secondary">Idade (Calc.)</Typography>
@@ -401,6 +452,15 @@ export default function EvaluationPage() {
                         </Box>
                         <Divider />
                         
+                        {/* NOVO: DATA DE ENTRADA */}
+                        <Box display="flex" justifyContent="space-between">
+                            <Typography color="text.secondary">Data Entrada</Typography>
+                            <Typography fontWeight="bold">
+                                {animal.entryDate ? new Date(animal.entryDate).toLocaleDateString('pt-BR') : '---'}
+                            </Typography>
+                        </Box>
+                        <Divider />
+
                         {/* 7. LOCALIZAÇÃO E MAPAS */}
                         <Box display="flex" justifyContent="space-between" alignItems="center">
                             <Typography color="text.secondary" display="flex" gap={0.5}>

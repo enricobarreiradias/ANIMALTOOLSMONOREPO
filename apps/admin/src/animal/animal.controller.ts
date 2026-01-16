@@ -1,7 +1,9 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UsePipes, ValidationPipe } from '@nestjs/common';
+import { plainToInstance } from 'class-transformer'; 
 import { AnimalService } from './animal.service';
 import { CreateAnimalDto } from './dto/create-animal.dto';
 import { UpdateAnimalDto } from './dto/update-animal.dto';
+import { ExternalAnimalDto } from './dto/external-integration.dto';
 
 @Controller('animal')
 export class AnimalController {
@@ -30,5 +32,10 @@ export class AnimalController {
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.animalService.remove(+id);
+  }
+
+  @Post('integration/webhook') 
+  createFromIntegration(@Body() payload: ExternalAnimalDto) {
+    return this.animalService.createFromExternal(payload);
   }
 }
