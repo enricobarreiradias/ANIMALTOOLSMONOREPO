@@ -57,6 +57,13 @@ export class AnimalService {
         fullEntryDate = new Date(`${data.entryDateRaw}T${timeString}`);
       }
 
+      // [NOVO] Combinar Data + Hora de modificação externa
+      let fullModificationDate: Date | null = null;
+      if (data.modificationDateRaw) {
+        const timeString = data.modificationTimeRaw || '00:00:00';
+        fullModificationDate = new Date(`${data.modificationDateRaw}T${timeString}`);
+      }
+
       // B. Calcular Idade em Meses
       let calculatedAge: number | null = null;
       if (data.birthDate) {
@@ -92,6 +99,12 @@ export class AnimalService {
         externalCategoryId: data.categoryId || null,
         externalBreedId: data.breedId || null,
         externalCoatId: data.coatId || null,
+
+        // [NOVO] IDs de Controle e Sincronização
+        externalCostCenterId: data.costCenterId || null,
+        externalStockLocationId: data.stockLocationId || null,
+        externalLotId: data.lotId || null,
+        externalModificationDate: fullModificationDate,
       });
 
       const savedAnimal = await queryRunner.manager.save(newAnimal);

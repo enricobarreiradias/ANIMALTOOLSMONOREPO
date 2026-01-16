@@ -74,6 +74,17 @@ export class Animal {
   @Column({ type: 'int', nullable: true, name: 'external_coat_id' })
   externalCoatId: number | null;
 
+  @Column({ type: 'int', nullable: true, name: 'external_cost_center_id' })
+  externalCostCenterId: number | null; // Para o "centro_de_custo_id"
+
+  @Column({ type: 'int', nullable: true, name: 'external_stock_location_id' })
+  externalStockLocationId: number | null; // Para o "local_de_estoque_id"
+
+  @Column({ type: 'int', nullable: true, name: 'external_lot_id' })
+  externalLotId: number | null; // Para o "lote_id"
+
+  @Column({ type: 'timestamp', nullable: true, name: 'external_modification_date' })
+  externalModificationDate: Date | null;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

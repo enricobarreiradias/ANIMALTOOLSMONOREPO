@@ -98,6 +98,31 @@ export class ExternalAnimalDto {
   @IsOptional()
   lotName?: string;
 
+  @Expose({ name: 'centro_de_custo_id' })
+  @IsNumber()
+  @IsOptional()
+  costCenterId?: number; 
+
+  @Expose({ name: 'local_de_estoque_id' })
+  @IsNumber()
+  @IsOptional()
+  stockLocationId?: number; 
+
+  @Expose({ name: 'lote_id' })
+  @IsNumber()
+  @IsOptional()
+  lotId?: number; 
+
+  @Expose({ name: 'data_de_entrada_modificado' })
+  @IsString()
+  @IsOptional()
+  modificationDateRaw?: string; 
+
+  @Expose({ name: 'horário_de_entrada_modificado' })
+  @IsString()
+  @IsOptional()
+  modificationTimeRaw?: string; 
+
   @Expose({ name: 'data_de_entrada_criado' })
   @IsString()
   @IsOptional()
