@@ -63,10 +63,9 @@ export interface EvaluationPayload {
 }
 
 export enum MoultingStage {
-  DL = 'DL', // Dente de Leite (Todos Decíduos)
-  D2 = '2D', // 2 Dentes (Pinças Permanentes)
-  D4 = '4D', // 4 Dentes (Primeiros Médios Permanentes)
-  D6 = '6D', // 6 Dentes (Segundos Médios Permanentes)
-  BC = 'BC', // Boca Cheia (Todos Permanentes)
+  DL = 'DL', 
+  D2 = 'D2', 
+  D4 = 'D4', 
+  D6 = 'D6', 
+  BC = 'BC', 
 }
-
