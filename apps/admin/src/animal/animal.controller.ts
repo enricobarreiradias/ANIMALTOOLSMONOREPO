@@ -14,9 +14,26 @@ export class AnimalController {
     return this.animalService.create(createAnimalDto);
   }
 
+  // ROTA PARA DISPARAR A SINCRONIZAÇÃO (PULL)
+  // GET /api/animal/integration/sync
+  @Get('integration/sync')
+  async syncAnimals() {
+    return await this.animalService.syncFromExternalApi();
+  }
+
   @Get()
   findAll() {
     return this.animalService.findAll();
+  }
+
+  @Get('filters/farms')
+  getFarmsList() {
+    return this.animalService.findUniqueFarms();
+  }
+
+  @Get('filters/clients')
+  getClientsList() {
+    return this.animalService.findUniqueClients();
   }
 
   @Get(':id')
@@ -38,4 +55,7 @@ export class AnimalController {
   createFromIntegration(@Body() payload: ExternalAnimalDto) {
     return this.animalService.createFromExternal(payload);
   }
+  
+  
+
 }

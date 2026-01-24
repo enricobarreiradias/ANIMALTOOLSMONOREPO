@@ -1,9 +1,8 @@
-import { Injectable, NotFoundException, Logger } from '@nestjs/common';
+import { Injectable,HttpException, NotFoundException, Logger, HttpStatus } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource, DeepPartial } from 'typeorm';
 import axios from 'axios';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
-
 import { CreateAnimalDto } from './dto/create-animal.dto';
 import { UpdateAnimalDto } from './dto/update-animal.dto';
 import { ExternalAnimalDto } from './dto/external-integration.dto'; 
@@ -37,13 +36,112 @@ export class AnimalService {
     });
   }
 
+// --- NOVO: SINCRONIZAÇÃO COM API EXTERNA (PULL) ---
+  async syncFromExternalApi() {
+    const dtInit = '2026-01-01';
+    const dtEnd = '2026-01-30'; 
+    const url = `https://apicatwork.gerenteboviplan.com.br/animals_in?client=animaltools&dt_init=${dtInit}&dt_end=${dtEnd}`;
+
+    console.log(`🔄 Iniciando sincronização: ${url}`);
+
+    try {
+      const response = await axios.get(url);
+      const externalAnimals = response.data;
+
+      if (!Array.isArray(externalAnimals)) {
+        throw new Error('Formato inválido recebido da API externa');
+      }
+
+      let count = 0;
+
+      for (const item of externalAnimals) {
+        const tagCode = item['n°_do_Animal']; 
+        let animal = await this.animalRepository.findOne({ where: { tagCode } });
+
+        const animalPayload: DeepPartial<Animal> = {
+          tagCode: tagCode,
+          breed: item['nome_raca_id'] || 'Indefinida',
+          chip: item['chip'],
+          sisbovNumber: item['n°_do_SISBOV'],
+          age: 24, 
+          birthDate: item['data_de_nascimento'] ? new Date(item['data_de_nascimento']) : null,
+          currentWeight: item['peso_atual'], 
+          farm: item['nome_centro_de_custo_id'],
+          client: 'Gerente Boviplan', 
+          lot: item['nome_lote_id'],
+          location: item['nome_local_de_estoque_id'],
+          collectionDate: item['data_de_entrada_criado'] ? new Date(item['data_de_entrada_criado']) : new Date(),
+        };
+
+        if (animal) {
+          await this.animalRepository.update(animal.id, animalPayload);
+        } else {
+          animal = this.animalRepository.create(animalPayload);
+          await this.animalRepository.save(animal);
+        }
+        
+        // 4. Salvar Fotos
+        if (item['fotos'] && Array.isArray(item['fotos'])) {
+            // Buscamos o animal recém salvo/atualizado
+            const savedAnimal = await this.animalRepository.findOne({ where: { tagCode } });
+            
+            // CORREÇÃO AQUI: Verificamos se ele existe antes de usar
+            if (savedAnimal) { 
+                for (const foto of item['fotos']) {
+                    const link = foto['link_do_driver'];
+                    
+                    const existingMedia = await this.mediaRepository.findOne({ 
+                        where: { s3UrlPath: link, animal: { id: savedAnimal.id } } 
+                    });
+
+                    if (!existingMedia) {
+                        await this.mediaRepository.save({
+                            animal: savedAnimal, // Agora o TS sabe que não é null
+                            s3UrlPath: link,
+                            photoType: PhotoType.FRONTAL,
+                            originalName: `Foto Externa ${foto['foto_id']}`
+                        });
+                    }
+                }
+            } else {
+                console.warn(`Aviso: Animal ${tagCode} não encontrado após processamento. Fotos ignoradas.`);
+            }
+        }
+
+        count++;
+      }
+
+      return { message: `✅ Sincronização concluída! ${count} animais processados.` };
+
+    } catch (error) {
+        // TRATAMENTO ESPECIAL PARA O CASO "SEM DADOS"
+        if (axios.isAxiosError(error) && error.response) {
+            // Se for 404, assumimos que é "Nenhum registro encontrado"
+            if (error.response.status === 404) {
+                console.warn('⚠️ API Externa retornou 404 (Provavelmente sem dados para o período).');
+                return { message: 'Nenhum animal encontrado no período informado (API retornou 404).' };
+            }
+        }
+
+        const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+        console.error('❌ Erro na sincronização:', errorMessage);
+        
+        throw new HttpException(
+            `Falha na API Externa: ${errorMessage}`, 
+            HttpStatus.BAD_GATEWAY
+        );
+    }
+  }
+
+
+  
   // 1. CREATE 
   create(createAnimalDto: CreateAnimalDto) {
     const animal = this.animalRepository.create(createAnimalDto);
     return this.animalRepository.save(animal);
   }
 
-  // --- NOVO MÉTODO: IMPORTAÇÃO EXTERNA COMPLETA ---
+  // --- IMPORTAÇÃO EXTERNA COMPLETA ---
   async createFromExternal(data: ExternalAnimalDto) {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
@@ -57,7 +155,7 @@ export class AnimalService {
         fullEntryDate = new Date(`${data.entryDateRaw}T${timeString}`);
       }
 
-      // [NOVO] Combinar Data + Hora de modificação externa
+      // Combinar Data + Hora de modificação externa
       let fullModificationDate: Date | null = null;
       if (data.modificationDateRaw) {
         const timeString = data.modificationTimeRaw || '00:00:00';
@@ -95,12 +193,12 @@ export class AnimalService {
         status: data.status || 'Ativo',
         entryDate: fullEntryDate,
 
-        // IDs Externos (opcionais, mas guardados)
+        // IDs Externos 
         externalCategoryId: data.categoryId || null,
         externalBreedId: data.breedId || null,
         externalCoatId: data.coatId || null,
 
-        // [NOVO] IDs de Controle e Sincronização
+        // IDs de Controle e Sincronização
         externalCostCenterId: data.costCenterId || null,
         externalStockLocationId: data.stockLocationId || null,
         externalLotId: data.lotId || null,
@@ -177,7 +275,7 @@ export class AnimalService {
           Key: fileName,
           Body: response.data,
           ContentType: 'image/jpeg',
-          ACL: 'public-read' // Atenção: Verifique se o bucket permite ACLs públicas
+          ACL: 'public-read' // Verifique se o bucket permite ACLs públicas
       }));
 
       // 5. Retornar URL pública
@@ -237,4 +335,30 @@ export class AnimalService {
 
     return this.animalRepository.remove(animalEntity);
   }
+
+  async findUniqueFarms() {
+    const queryBuilder = this.animalRepository.createQueryBuilder('animal');
+    const farms = await queryBuilder
+      .select('DISTINCT animal.farm', 'farm')
+      .where('animal.farm IS NOT NULL')
+      .orderBy('animal.farm', 'ASC')
+      .getRawMany();
+
+    return farms.map(f => f.farm);
+  }
+
+  async findUniqueClients() {
+    const queryBuilder = this.animalRepository.createQueryBuilder('animal');
+    const clients = await queryBuilder
+      .select('DISTINCT animal.client', 'client') // Busca clientes distintos
+      .where('animal.client IS NOT NULL')         // Ignora nulos
+      .andWhere("animal.client != ''")            // Ignora strings vazias
+      .orderBy('animal.client', 'ASC')
+      .getRawMany();
+
+    return clients.map(c => c.client);
+  }
+
+  
+  
 }

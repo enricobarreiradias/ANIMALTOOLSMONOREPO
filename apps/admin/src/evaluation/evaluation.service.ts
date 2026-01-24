@@ -8,8 +8,8 @@ import { Animal } from '@app/data/entities/animal.entity';
 import { User } from '@app/data/entities/user.entity';
 import { Media } from '@app/data/entities/media.entity'; 
 import { PhotoType, SeverityScale, ToothCode, ColorScale, ToothType } from '@app/data/enums/dental-evaluation.enums'; 
-import { MoultingStage } from '@app/data/enums/dental-evaluation.enums'; // Importe o Enum
-import { QuickMoultingDto } from './dto/quick-moulting.dto'; // Importe o DTO
+// REMOVIDO: import { MoultingStage } ...
+// REMOVIDO: import { QuickMoultingDto } ...
 
 @Injectable()
 export class EvaluationService {
@@ -107,91 +107,16 @@ export class EvaluationService {
     
     return this.findOne(savedEvaluation.id);
   }
-  // --- APLICAÇÃO DE MUDA RÁPIDA ---
-  async applyQuickMoulting(dto: QuickMoultingDto) {
-      const stage = dto.stage;
-      
-      // Regras de quais dentes são permanentes baseados no estágio
-      const permanentRules = {
-        I1: [MoultingStage.D2, MoultingStage.D4, MoultingStage.D6, MoultingStage.BC].includes(stage),
-        I2: [MoultingStage.D4, MoultingStage.D6, MoultingStage.BC].includes(stage),
-        I3: [MoultingStage.D6, MoultingStage.BC].includes(stage),
-        I4: [MoultingStage.BC].includes(stage),
-      };
 
-      // 1. Busca a avaliação existente para não perder dados
-      const existingEvaluation = await this.evaluationRepository.findOne({
-          where: { animal: { id: Number(dto.animalId) } },
-          relations: ['teeth'],
-          order: { evaluationDate: 'DESC' }
-      });
-
-      const teethToSave = Object.values(ToothCode).map(code => {
-        const prefix = code.split('_')[0]; 
-        const isPermanent = permanentRules[prefix] || false;
-        const newToothType = isPermanent ? ToothType.PERMANENT : ToothType.DECIDUOUS;
-
-        // Verifica se já existe dados para este dente na avaliação atual/última
-        const existingTooth = existingEvaluation?.teeth?.find(t => t.toothCode === code);
-
-        if (existingTooth) {
-            // CENÁRIO 1: Dente já existe. 
-            return {
-                toothCode: code,
-                toothType: newToothType, 
-                isPresent: existingTooth.isPresent,
-                
-                fractureLevel: existingTooth.fractureLevel,
-                pulpitis: existingTooth.pulpitis,
-                gingivalRecessionLevel: existingTooth.gingivalRecessionLevel,
-                crownReductionLevel: existingTooth.crownReductionLevel,
-                lingualWear: existingTooth.lingualWear,
-                periodontalLesions: existingTooth.periodontalLesions,
-                dentalCalculus: existingTooth.dentalCalculus,
-                caries: existingTooth.caries,
-                vitrifiedBorder: existingTooth.vitrifiedBorder,
-                pulpChamberExposure: existingTooth.pulpChamberExposure,
-                gingivitisEdema: existingTooth.gingivitisEdema,
-                gingivitisColor: existingTooth.gingivitisColor,
-                abnormalColor: existingTooth.abnormalColor,
-            };
-        } else {
-            // CENÁRIO 2: Dente não existia (ou é uma avaliação nova do zero)
-            return {
-                toothCode: code,
-                toothType: newToothType,
-                isPresent: true,
-                fractureLevel: SeverityScale.NONE,
-                pulpitis: SeverityScale.NONE,
-                gingivalRecessionLevel: SeverityScale.NONE,
-                crownReductionLevel: SeverityScale.NONE,
-                lingualWear: SeverityScale.NONE,
-                periodontalLesions: SeverityScale.NONE,
-                dentalCalculus: SeverityScale.NONE,
-                caries: SeverityScale.NONE,
-                vitrifiedBorder: SeverityScale.NONE,
-                pulpChamberExposure: SeverityScale.NONE,
-                gingivitisEdema: SeverityScale.NONE,
-                gingivitisColor: ColorScale.NORMAL,
-                abnormalColor: ColorScale.NORMAL,
-            };
-        }
-      });
-
-      return this.create({
-        animalId: dto.animalId,
-        evaluatorId: dto.evaluatorId,
-        notes: existingEvaluation ? existingEvaluation.generalObservations : '',
-        teeth: teethToSave
-      });
-  }
+  // 🚨 REMOVIDO: Método applyQuickMoulting inteiro
 
   // --- 2. PENDENTES COM FILTROS E PAGINAÇÃO ---
   async findPendingEvaluations(
       page: number = 1, 
       limit: number = 20, 
       search?: string, 
-      filterFarm?: string
+      filterFarm?: string,
+      filterClient?: string
   ) {
       const query = this.animalRepository.createQueryBuilder('animal')
         .leftJoinAndSelect('animal.mediaFiles', 'media')
@@ -204,7 +129,10 @@ export class EvaluationService {
       if (filterFarm) {
           query.andWhere('animal.farm ILIKE :farm', { farm: `%${filterFarm}%` });
       }
-
+      if (filterClient) {
+          query.andWhere('animal.client ILIKE :client', { client: `%${filterClient}%` });
+      }
+      
       const [animals, total] = await query
         .orderBy('animal.id', 'DESC')
         .skip((page - 1) * limit)
@@ -218,7 +146,7 @@ export class EvaluationService {
             breed: a.breed,
             farm: a.farm,
             client: a.client,
-            age: a.age, // <--- ADICIONADO AQUI!
+            age: a.age, 
             chip: a.chip,
             sisbov: a.sisbovNumber, 
             currentWeight: a.currentWeight,
@@ -326,6 +254,7 @@ export class EvaluationService {
 
       if (updateDto.teeth && Array.isArray(updateDto.teeth)) {
           for (const t of updateDto.teeth) {
+              // VERIFICAÇÃO CRÍTICA: Busca pelo código do dente DENTRO desta avaliação
               let tooth = await queryRunner.manager.findOne(ToothEvaluation, {
                   where: { evaluation: { id: id }, toothCode: t.toothCode }
               });
@@ -507,5 +436,4 @@ export class EvaluationService {
       }));
       await this.toothRepository.save(teethEntities);
   }
-  
 }

@@ -17,15 +17,12 @@ import {
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
-import { QuickMoultingDto } from './dto/quick-moulting.dto'; 
+// REMOVIDO: import { QuickMoultingDto } ...
 import { EvaluationService } from './evaluation.service';
-
-
 
 @Controller('evaluations')
 export class EvaluationController {
   constructor(private readonly evaluationService: EvaluationService) {}
-
 
   @Post()
   @UsePipes(new ValidationPipe({ transform: true }))
@@ -74,8 +71,9 @@ export class EvaluationController {
     @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
     @Query('search') search?: string,
     @Query('filterFarm') filterFarm?: string,
+    @Query('filterClient') filterClient?: string, 
   ) {
-    return await this.evaluationService.findPendingEvaluations(page, limit, search, filterFarm);
+    return await this.evaluationService.findPendingEvaluations(page, limit, search, filterFarm, filterClient);
   }
 
   @Get('history')
@@ -119,9 +117,4 @@ export class EvaluationController {
     return await this.evaluationService.remove(+id);
   }
 
-  @Post('quick-moulting')
-  async applyQuickMoulting(@Body() dto: QuickMoultingDto) {
-    return this.evaluationService.applyQuickMoulting(dto);
-  }
-  
 }

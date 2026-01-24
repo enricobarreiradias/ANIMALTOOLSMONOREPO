@@ -10,7 +10,8 @@ import {
   Stack, Alert, Divider, Grid 
 } from '@mui/material';
 import { Search, FilterList, CheckCircle, Pets, ArrowForward, Refresh } from '@mui/icons-material';
-import { EvaluationService } from '../../services/api';
+// Importação consolidada
+import { EvaluationService, AnimalService } from '../../services/api';
 
 interface ApiAnimalResponse {
   id: string;
@@ -35,8 +36,29 @@ export default function PendingEvaluationsPage() {
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
   const [searchTerm, setSearchTerm] = useState('');
+  
+  // Filtros
   const [filterFarm, setFilterFarm] = useState('all');
   const [filterClient, setFilterClient] = useState('all');
+
+  // Opções para os Selects (Dados Reais)
+  const [farmOptions, setFarmOptions] = useState<string[]>([]);
+  const [clientOptions, setClientOptions] = useState<string[]>([]);
+
+  // Carrega as opções dos filtros (Fazendas e Clientes)
+  useEffect(() => {
+    // 1. Carregar Fazendas
+    AnimalService.getFarms()
+      .then((res) => setFarmOptions(res.data))
+      .catch((err) => console.error('Erro ao carregar fazendas:', err));
+
+    // 2. Carregar Clientes 
+    if (AnimalService.getClients) {
+        AnimalService.getClients()
+        .then((res) => setClientOptions(res.data))
+        .catch((err) => console.error('Erro ao carregar clientes:', err));
+    }
+  }, []);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -45,11 +67,14 @@ export default function PendingEvaluationsPage() {
     try {
       const farmQuery = filterFarm === 'all' ? '' : filterFarm;
       
+      const clientQuery = filterClient === 'all' ? '' : filterClient; 
+      
       const response = await EvaluationService.getPending(
           page + 1, 
           rowsPerPage, 
           searchTerm, 
-          farmQuery 
+          farmQuery,    
+          clientQuery   
       );
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -69,14 +94,10 @@ export default function PendingEvaluationsPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, rowsPerPage, searchTerm, filterFarm]);
+  }, [page, rowsPerPage, searchTerm, filterFarm, filterClient]);
 
   useEffect(() => {
-    const delayDebounceFn = setTimeout(() => {
       loadData();
-    }, 600); 
-
-    return () => clearTimeout(delayDebounceFn);
   }, [loadData]);
 
   const handleChangePage = (event: unknown, newPage: number) => {
@@ -124,6 +145,7 @@ export default function PendingEvaluationsPage() {
 
       <Paper elevation={1} sx={{ p: 2, mb: 3, borderRadius: 2 }}>
         <Grid container spacing={2} alignItems="center">
+            {/* BUSCA TEXTUAL */}
             <Grid size={{ xs: 12, md: 4 }}>
                 <TextField 
                     fullWidth 
@@ -134,35 +156,48 @@ export default function PendingEvaluationsPage() {
                     size="small" 
                 />
             </Grid>
-            <Grid size={{ xs: 6, md: 3 }}>
-                <FormControl fullWidth size="small">
-                    <InputLabel>Filtrar Fazenda</InputLabel>
-                    <Select 
-                        value={filterFarm} 
-                        label="Filtrar Fazenda" 
-                        onChange={(e) => { setFilterFarm(e.target.value); setPage(0); }}
-                    >
-                        <MenuItem value="all">Todas as Fazendas</MenuItem>
-                        <MenuItem value="Fazenda Santa Fé">Fazenda Santa Fé</MenuItem>
-                        <MenuItem value="Fazenda Ouro Verde">Fazenda Ouro Verde</MenuItem>
-                        <MenuItem value="Rancho do Vale">Rancho do Vale</MenuItem>
-                    </Select>
-                </FormControl>
+            
+            {/* FILTRO FAZENDA */}
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                <TextField
+                    select
+                    label="Filtrar por Fazenda"
+                    value={filterFarm}
+                    onChange={(e) => { setFilterFarm(e.target.value); setPage(0); }}
+                    variant="outlined"
+                    size="small"
+                    fullWidth
+                >
+                    <MenuItem value="all">
+                        <em>Todas as Fazendas</em>
+                    </MenuItem>
+                    {farmOptions.map((farmName) => (
+                        <MenuItem key={farmName} value={farmName}>
+                        {farmName}
+                        </MenuItem>
+                    ))}
+                </TextField>
             </Grid>
-            <Grid size={{ xs: 6, md: 3 }}>
+
+            {/* FILTRO CLIENTE (AGORA DINÂMICO) */}
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                 <FormControl fullWidth size="small">
                     <InputLabel>Filtrar Cliente</InputLabel>
                     <Select 
                         value={filterClient} 
                         label="Filtrar Cliente" 
                         onChange={(e) => { setFilterClient(e.target.value); setPage(0); }}
-                        disabled
                     >
-                        <MenuItem value="all">Todos os Clientes</MenuItem>
-                        <MenuItem value="Cliente Teste">Cliente Teste</MenuItem>
+                        <MenuItem value="all"><em>Todos os Clientes</em></MenuItem>
+                        {clientOptions.map((clientName) => (
+                            <MenuItem key={clientName} value={clientName}>
+                                {clientName}
+                            </MenuItem>
+                        ))}
                     </Select>
                 </FormControl>
             </Grid>
+
             <Grid size={{ xs: 12, md: 2 }}>
                  <Button fullWidth variant="outlined" onClick={handleClearFilters} startIcon={<FilterList />} color="inherit">Limpar</Button>
             </Grid>
@@ -202,9 +237,9 @@ export default function PendingEvaluationsPage() {
                                     </TableCell>
                                     <TableCell>
                                         <Typography fontWeight="bold" variant="body1">{row.code}</Typography>
-                                        <Typography variant="caption" color="text.secondary">Entrada: {row.entryDate || '-'}</Typography>
+                                        <Typography variant="caption" color="text.secondary">Entrada: {row.entryDate ? new Date(row.entryDate).toLocaleDateString() : '-'}</Typography>
                                     </TableCell>
-                                    <TableCell><Chip label={row.breed} size="small" variant="outlined" /></TableCell>
+                                    <TableCell><Chip label={row.breed || 'N/A'} size="small" variant="outlined" /></TableCell>
                                     <TableCell>{row.farm || 'Não informada'}</TableCell>
                                     <TableCell>{row.client || 'Não informado'}</TableCell>
                                     <TableCell align="center">
