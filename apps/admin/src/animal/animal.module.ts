@@ -3,11 +3,13 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AnimalService } from './animal.service';
 import { AnimalController } from './animal.controller';
 import { Animal } from '../../../../libs/data/src/entities/animal.entity';
-import { Media } from '../../../../libs/data/src/entities/media.entity'; // <-- Importe a entidade Media
+import { Media } from '../../../../libs/data/src/entities/media.entity'; 
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Animal, Media]) 
+    TypeOrmModule.forFeature([Animal, Media]),
+    AuthModule,
   ],
   controllers: [AnimalController],
   providers: [AnimalService],

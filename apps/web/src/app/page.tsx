@@ -1,223 +1,285 @@
 "use client";
 
-import { useEffect, useState } from 'react';
-import { 
-  Box, Grid, Card, CardContent, Typography, 
-  CircularProgress, Stack, Chip, Divider, LinearProgress, Alert 
-} from '@mui/material';
-import { 
-  Pets, Assessment, Warning, TrendingUp, CalendarToday, CheckCircle 
-} from '@mui/icons-material';
-import { api } from '../services/api';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import {
+  Box,
+  Button,
+  Container,
+  TextField,
+  Typography,
+  Alert,
+  CircularProgress,
+  InputAdornment,
+  IconButton,
+  useTheme,
+  alpha,
+} from "@mui/material";
+import { Visibility, VisibilityOff, Pets } from "@mui/icons-material";
+import { AuthService } from "../services/api";
 
-// --- INTERFACES ---
-interface DashboardStats {
-  totalAnimals: number;
-  evaluated: number;
-  critical: number;
-}
+export default function LoginPage() {
+  const router = useRouter();
+  const theme = useTheme();
 
-interface StatCardProps {
-  title: string;
-  value: number | string;
-  icon: React.ReactNode;
-  color: string;
-  subtitle: string;
-}
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-export default function DashboardPage() {
-  const [stats, setStats] = useState<DashboardStats>({
-    totalAnimals: 0,
-    evaluated: 0,
-    critical: 0
-  });
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
 
-  useEffect(() => {
-    const fetchDashboardData = async () => {
-      try {
-        const response = await api.get('/evaluations/dashboard');
-        const data = response.data;
+    try {
+      const response = await AuthService.login({ email, password });
+      const token = response.data.accessToken;
 
-        setStats({
-          totalAnimals: data.totalAnimals,
-          evaluated: data.totalEvaluations, 
-          critical: data.criticalCases      
-        });
-      } catch (err) {
-        console.error("Erro ao carregar dados:", err);
-        setError('Falha ao conectar com o servidor.');
-      } finally {
-        setLoading(false);
+      if (token) {
+        localStorage.setItem("token", token);
+        router.push("/pending");
+      } else {
+        setError("Token não recebido. Tente novamente.");
       }
-    };
-
-    fetchDashboardData();
-  }, []);
-
-  if (loading) {
-    return (
-      <Box display="flex" justifyContent="center" alignItems="center" height="60vh">
-        <CircularProgress size={60} thickness={4} />
-      </Box>
-    );
-  }
-
-  const StatCard = ({ title, value, icon, color, subtitle }: StatCardProps) => (
-    <Card sx={{ height: '100%', position: 'relative', overflow: 'hidden' }}>
-      <Box 
-        sx={{ 
-          position: 'absolute', top: -15, right: -15, 
-          opacity: 0.1, transform: 'rotate(15deg)', color: color 
-        }}
-      >
-        {icon}
-      </Box>
-      <CardContent>
-        <Stack spacing={2}>
-          <Box display="flex" alignItems="center" gap={1}>
-            <Box p={1} bgcolor={`${color}15`} borderRadius={2} color={color} display="flex">
-              {icon}
-            </Box>
-            <Typography variant="subtitle2" color="text.secondary" fontWeight={700}>
-              {title}
-            </Typography>
-          </Box>
-          <Box>
-            <Typography variant="h3" fontWeight={800} color="text.primary" sx={{ letterSpacing: '-1px' }}>
-              {value}
-            </Typography>
-            <Typography variant="caption" color="text.secondary" fontWeight={500}>
-              {subtitle}
-            </Typography>
-          </Box>
-        </Stack>
-      </CardContent>
-    </Card>
-  );
+    //eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (err: any) {
+      if (err.response?.status === 401) {
+        setError("Email ou senha incorretos.");
+      } else {
+        setError("Erro ao conectar com o servidor.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <div className="fade-in">
-        {error && (
-            <Box mb={3}>
-                <Alert severity="error">{error}</Alert>
-            </Box>
-        )}
-
-      <Box mb={5} display="flex" justifyContent="space-between" alignItems="end" flexWrap="wrap" gap={2}>
-        <Box>
-          <Typography variant="h4" gutterBottom fontWeight={700}>
-            Painel de Controle
-          </Typography>
-          <Typography variant="body1" color="text.secondary">
-            Visão geral da saúde do rebanho e métricas de avaliação.
+    <Box
+      minHeight="100vh"
+      display="flex"
+      alignItems="center"
+      justifyContent="center"
+      sx={{
+        backgroundColor: theme.palette.background.default,
+      }}
+    >
+      <Container maxWidth="xs" disableGutters>
+        {/* Logo/Branding */}
+        <Box 
+          display="flex" 
+          alignItems="center" 
+          justifyContent="center" 
+          mb={4}
+          gap={1}
+        >
+          <Pets 
+            sx={{ 
+              fontSize: 32,
+              color: theme.palette.primary.main,
+            }} 
+          />
+          <Typography
+            variant="h5"
+            fontWeight={600}
+            color="text.primary"
+          >
+            VirtualVet
           </Typography>
         </Box>
-        <Chip 
-          icon={<CalendarToday sx={{ fontSize: 16 }} />} 
-          label={new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })} 
-          variant="outlined" 
-          sx={{ bgcolor: 'white', fontWeight: 500 }}
-        />
-      </Box>
 
-      {/* KPIs Principais */}
-      <Grid container spacing={3} mb={4}>
-        <Grid size={{ xs: 12, md: 4 }}>
-          <StatCard 
-            title="TOTAL DE ANIMAIS" 
-            value={stats.totalAnimals} 
-            icon={<Pets sx={{ fontSize: 80 }} />}
-            color="#0F766E" 
-            subtitle="Cadastrados no sistema"
-          />
-        </Grid>
-        <Grid size={{ xs: 12, md: 4 }}>
-          <StatCard 
-            title="LAUDOS EMITIDOS" 
-            value={stats.evaluated} 
-            icon={<Assessment sx={{ fontSize: 80 }} />}
-            color="#0ea5e9" 
-            subtitle="Avaliações concluídas"
-          />
-        </Grid>
-        <Grid size={{ xs: 12, md: 4 }}>
-          <StatCard 
-            title="CASOS CRÍTICOS" 
-            value={stats.critical} 
-            icon={<Warning sx={{ fontSize: 80 }} />}
-            color="#ef4444" 
-            subtitle="Exigem atenção imediata"
-          />
-        </Grid>
-      </Grid>
+        {/* Card de Login */}
+        <Box
+          sx={{
+            border: "1px solid",
+            borderColor: theme.palette.divider,
+            borderRadius: 2,
+            backgroundColor: theme.palette.background.paper,
+            padding: { xs: 3, sm: 4 },
+            boxShadow: "0 1px 3px rgba(0,0,0,0.12)",
+          }}
+        >
+          <Typography
+            variant="h6"
+            fontWeight={500}
+            gutterBottom
+            color="text.primary"
+          >
+            Entrar
+          </Typography>
 
-      <Grid container spacing={3}>
-        {/* Gráfico de Progresso */}
-        <Grid size={{ xs: 12, md: 8 }}>
-            <Card sx={{ height: '100%' }}>
-                <CardContent sx={{ p: 3 }}>
-                <Stack direction="row" alignItems="center" justifyContent="space-between" mb={3}>
-                    <Stack direction="row" alignItems="center" gap={2}>
-                        <TrendingUp color="primary" />
-                        <Typography variant="h6" fontWeight={700}>Progresso das Avaliações</Typography>
-                    </Stack>
-                </Stack>
-                <Divider sx={{ mb: 4 }} />
-                
-                <Box py={2}>
-                    <Box display="flex" justifyContent="space-between" mb={1}>
-                        <Typography variant="body2" fontWeight={600}>Total Avaliado</Typography>
-                        <Typography variant="body2" fontWeight={700} color="primary.main">
-                            {stats.totalAnimals > 0 ? Math.round((stats.evaluated / stats.totalAnimals) * 100) : 0}%
-                        </Typography>
-                    </Box>
-                    <LinearProgress 
-                        variant="determinate" 
-                        value={stats.totalAnimals > 0 ? (stats.evaluated / stats.totalAnimals) * 100 : 0} 
-                        sx={{ height: 12, borderRadius: 6, bgcolor: '#f1f5f9' }}
-                    />
-                    <Typography variant="caption" color="text.secondary" sx={{ mt: 2, display: 'block' }}>
-                        {stats.evaluated} de {stats.totalAnimals} animais processados até o momento.
-                    </Typography>
-                </Box>
-                </CardContent>
-            </Card>
-        </Grid>
-        
-        {/* Status do Sistema */}
-        <Grid size={{ xs: 12, md: 4 }}>
-            <Card sx={{ height: '100%', bgcolor: '#1E293B', color: 'white' }}>
-                <CardContent sx={{ p: 4, display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'center' }}>
-                    <Stack direction="row" alignItems="center" gap={1} mb={2}>
-                        <CheckCircle sx={{ color: '#4ade80' }} />
-                        <Typography variant="h6" fontWeight={700}>
-                            Sistema Operacional
-                        </Typography>
-                    </Stack>
-                    
-                    <Box sx={{ opacity: 0.8 }}>
-                        <Typography variant="body2" gutterBottom>
-                            • Banco de Dados: <strong>Conectado</strong>
-                        </Typography>
-                        <Typography variant="body2" gutterBottom>
-                            • API Services: <strong>Online</strong>
-                        </Typography>
-                        <Typography variant="body2">
-                            • Versão: <strong>v1.0.4-beta</strong>
-                        </Typography>
-                    </Box>
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            mb={3}
+          >
+            Continue para a plataforma
+          </Typography>
 
-                    <Box mt={4} pt={3} borderTop="1px solid rgba(255,255,255,0.1)">
-                        <Typography variant="caption" sx={{ opacity: 0.5 }}>
-                            Última sincronização: {new Date().toLocaleTimeString()}
-                        </Typography>
-                    </Box>
-                </CardContent>
-            </Card>
-        </Grid>
-      </Grid>
-    </div>
+          {error && (
+            <Alert 
+              severity="error" 
+              sx={{ 
+                mb: 3,
+                borderRadius: 1,
+                fontSize: '0.875rem',
+              }}
+            >
+              {error}
+            </Alert>
+          )}
+
+          <Box component="form" onSubmit={handleLogin}>
+            <TextField
+              fullWidth
+              required
+              label="Email"
+              type="email"
+              variant="outlined"
+              margin="normal"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              disabled={loading}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: 1,
+                },
+              }}
+              InputProps={{
+                sx: {
+                  fontSize: '0.875rem',
+                }
+              }}
+            />
+
+            <TextField
+              fullWidth
+              required
+              label="Senha"
+              type={showPassword ? "text" : "password"}
+              variant="outlined"
+              margin="normal"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              disabled={loading}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: 1,
+                },
+              }}
+              InputProps={{
+                sx: {
+                  fontSize: '0.875rem',
+                },
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      onClick={() => setShowPassword(!showPassword)}
+                      edge="end"
+                      size="small"
+                      disabled={loading}
+                      sx={{
+                        '&:hover': {
+                          backgroundColor: alpha(theme.palette.action.hover, 0.1),
+                        },
+                      }}
+                    >
+                      {showPassword ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+            />
+
+            <Button
+              type="submit"
+              fullWidth
+              variant="contained"
+              size="medium"
+              disabled={loading}
+              sx={{
+                mt: 3,
+                py: 1.25,
+                borderRadius: 1,
+                fontWeight: 500,
+                textTransform: "none",
+                fontSize: '0.875rem',
+                backgroundColor: theme.palette.primary.main,
+                '&:hover': {
+                  backgroundColor: theme.palette.primary.dark,
+                  boxShadow: "0 1px 2px rgba(0,0,0,0.1)",
+                },
+                '&.Mui-disabled': {
+                  backgroundColor: alpha(theme.palette.primary.main, 0.5),
+                }
+              }}
+            >
+              {loading ? (
+                <CircularProgress size={20} color="inherit" />
+              ) : (
+                "Entrar"
+              )}
+            </Button>
+          </Box>
+
+          {/* Links de ajuda */}
+          <Box mt={3} pt={2} borderTop={1} borderColor="divider">
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              display="block"
+              textAlign="center"
+            >
+              <Button
+                variant="text"
+                size="small"
+                sx={{
+                  textTransform: "none",
+                  fontSize: '0.75rem',
+                  fontWeight: 400,
+                  color: theme.palette.primary.main,
+                  '&:hover': {
+                    backgroundColor: 'transparent',
+                    textDecoration: 'underline',
+                  },
+                }}
+              >
+                Esqueceu a senha?
+              </Button>
+              {" • "}
+              <Button
+                variant="text"
+                size="small"
+                sx={{
+                  textTransform: "none",
+                  fontSize: '0.75rem',
+                  fontWeight: 400,
+                  color: theme.palette.primary.main,
+                  '&:hover': {
+                    backgroundColor: 'transparent',
+                    textDecoration: 'underline',
+                  },
+                }}
+              >
+                Problemas para entrar?
+              </Button>
+            </Typography>
+          </Box>
+        </Box>
+
+        {/* Footer */}
+        <Box mt={4}>
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            display="block"
+            textAlign="center"
+          >
+            © {new Date().getFullYear()} VirtualVet
+          </Typography>
+        </Box>
+      </Container>
+    </Box>
   );
 }

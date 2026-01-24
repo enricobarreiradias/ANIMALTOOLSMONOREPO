@@ -5,6 +5,7 @@ import { ConfigModule } from '@nestjs/config';
 import { join } from 'path';
 import { EvaluationModule } from './evaluation/evaluation.module';
 import { AnimalModule } from './animal/animal.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { AnimalModule } from './animal/animal.module';
     }),
     EvaluationModule,
     AnimalModule,
+    AuthModule,
   ],
 })
 export class AppModule {}

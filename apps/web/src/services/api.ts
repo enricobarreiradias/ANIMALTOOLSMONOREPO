@@ -4,9 +4,47 @@ export const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3333/api',
 });
 
+// --- NOVO: INTERCEPTOR DE REQUISIÇÃO (Coloca o Token) ---
+api.interceptors.request.use((config) => {
+  // Verifica se estamos no navegador antes de tentar acessar o localStorage
+  if (typeof window !== 'undefined') {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+  }
+  return config;
+}, (error) => {
+  return Promise.reject(error);
+});
+
+// --- NOVO: INTERCEPTOR DE RESPOSTA (Trata Erro 401) ---
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    // Verifica se a URL original não é a de login
+    const isLoginRequest = error.config?.url?.includes('/auth/signin');
+
+    if (error.response && error.response.status === 401 && !isLoginRequest) {
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('token');
+        window.location.href = '/'; 
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 interface CreateData {
   [key: string]: unknown;
 }
+
+// --- NOVO: AUTH SERVICE ---
+export const AuthService = {
+  login: (data: { email: string; password: string }) => api.post('/auth/signin', data),
+  // Função útil para pegar os dados do user (opcional)
+  me: () => api.get('/auth/test'),
+};
 
 export const AnimalService = {
   getAll: () => api.get('/animal'),
@@ -17,7 +55,6 @@ export const AnimalService = {
 };
 
 export const EvaluationService = {
-
   getPending: (page = 1, limit = 20, search = '', farm = '', client = '') => 
     api.get(`/evaluations/pending?page=${page}&limit=${limit}&search=${search}&filterFarm=${farm}&filterClient=${client}`),
   
@@ -35,5 +72,4 @@ export const EvaluationService = {
 
   getReportStats: (farm = '', client = '', start = '', end = '') => 
     api.get(`/evaluations/reports/stats?filterFarm=${farm}&filterClient=${client}&startDate=${start}&endDate=${end}&_t=${Date.now()}`),
-
 };

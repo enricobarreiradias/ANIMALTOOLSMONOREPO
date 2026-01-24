@@ -36,6 +36,9 @@ interface ReportStats {
 export default function ReportsPage() {
   const router = useRouter();
 
+  // 1. Simulação do usuário (Substituir pelo Contexto de Auth real quando houver)
+  const user = { name: 'Administrador' }; 
+
   // Loading começa true para evitar flicker inicial
   const [loading, setLoading] = useState(true);
   
@@ -59,7 +62,6 @@ export default function ReportsPage() {
   // --- FUNÇÃO DE CARREGAMENTO ---
   // useCallback para manter a referência estável
   const loadReportData = useCallback(() => {
-    // Definimos loading aqui dentro para ser seguro
     setLoading(true);
 
     // Adicionamos timestamp para evitar cache
@@ -91,10 +93,33 @@ export default function ReportsPage() {
   };
 
   const handlePathologyClick = (key: string) => {
+    // Redireciona para o histórico filtrado pela patologia clicada
     router.push(`/history?pathology=${key}&farm=${filterFarm}&client=${filterClient}`);
   };
 
-  const pathologyList = stats ? Object.values(stats.pathologies).sort((a, b) => b.count - a.count) : [];
+  // --- LÓGICA DINÂMICA DE PATOLOGIAS ---
+  
+  // Lista de patologias que devem SEMPRE aparecer (Prioridade Comercial/Técnica)
+  const CORE_PATHOLOGIES = ['fracture', 'pulpitis', 'recession', 'periodontal'];
+
+  const pathologyList = stats ? Object.values(stats.pathologies)
+    .filter(item => {
+        // Regra: Mostra se for "Core" OU se tiver contagem > 0
+        // Isso limpa o gráfico de patologias raras que estão zeradas
+        return CORE_PATHOLOGIES.includes(item.key) || item.count > 0;
+    })
+    .sort((a, b) => {
+        // Ordenação inteligente:
+        // 1. Core Pathologies aparecem primeiro
+        const isACore = CORE_PATHOLOGIES.includes(a.key);
+        const isBCore = CORE_PATHOLOGIES.includes(b.key);
+        
+        if (isACore && !isBCore) return -1;
+        if (!isACore && isBCore) return 1;
+
+        // 2. Desempate por quantidade de casos (Maior para menor)
+        return b.count - a.count;
+    }) : [];
   
   const getPathologyColor = (index: number) => {
       const colors = ['#f59e0b', '#f97316', '#ef4444', '#b91c1c', '#3b82f6', '#6366f1'];
@@ -189,6 +214,7 @@ export default function ReportsPage() {
             </Box>
             <Box textAlign="right">
                 <Typography variant="subtitle2" fontWeight="bold">VirtualVet</Typography>
+                <Typography variant="caption" display="block">Avaliador: {user?.name}</Typography>
                 <Typography variant="caption" display="block">Fazenda: {filterFarm === 'all' ? 'Consolidado Geral' : filterFarm}</Typography>
                 <Typography variant="caption" display="block">Cliente: {filterClient === 'all' ? 'Consolidado Geral' : filterClient}</Typography>
             </Box>

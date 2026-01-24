@@ -375,26 +375,35 @@ export class EvaluationService {
     return await query.orderBy('evaluation.evaluationDate', 'DESC').getMany();
   }
 
-  // --- 8. DASHBOARD STATS ---
+  // --- 8. DASHBOARD STATS (CORRIGIDO) ---
   async getDashboardStats() {
+    // 1. Total de Animais
     const totalAnimals = await this.animalRepository.count();
+
+    // 2. Total de Avaliações (Laudos emitidos)
     const totalEvaluations = await this.evaluationRepository.count();
     
-    const pendingResult = await this.findPendingEvaluations(1, 1);
+    // 3. Pendentes
+    // CORREÇÃO AQUI: Mudamos de 'animal.evaluations' para 'animal.dentalEvaluations'
+    const pendingEvaluations = await this.animalRepository.createQueryBuilder('animal')
+        .leftJoin('animal.dentalEvaluations', 'evaluation') 
+        .where('evaluation.id IS NULL')
+        .getCount();
     
-    const criticalQuery = this.evaluationRepository.createQueryBuilder('eval')
-            .innerJoin('eval.teeth', 'tooth')
-            .where('tooth.fracture_level >= :level', { level: SeverityScale.SEVERE })
-            .orWhere('tooth.pulpitis >= :level', { level: SeverityScale.SEVERE })
-            .orWhere('tooth.gingival_recession_level >= :level', { level: SeverityScale.SEVERE }); 
+    // 4. Casos Críticos
+    const criticalStats = await this.evaluationRepository.createQueryBuilder('eval')
+        .innerJoin('eval.teeth', 'tooth')
+        .where('tooth.fracture_level >= :level', { level: SeverityScale.SEVERE })
+        .orWhere('tooth.pulpitis >= :level', { level: SeverityScale.SEVERE })
+        .orWhere('tooth.gingival_recession_level >= :level', { level: SeverityScale.SEVERE })
+        .select('COUNT(DISTINCT eval.id)', 'count')
+        .getRawOne();
         
-    const criticalCases = await criticalQuery.getCount();
-
     return {
       totalAnimals,
       totalEvaluations,
-      pendingEvaluations: pendingResult.meta.total, 
-      criticalCases,
+      pendingEvaluations, 
+      criticalCases: parseInt(criticalStats?.count || '0', 10),
     };
   }
 
@@ -565,17 +574,17 @@ export class EvaluationService {
     
     const stats = await statsQuery
         .select([
-            'SUM(CASE WHEN tooth.fracture_level > 0 THEN 1 ELSE 0 END) as fractures',
-            'SUM(CASE WHEN tooth.pulpitis > 0 THEN 1 ELSE 0 END) as pulpitis',
-            'SUM(CASE WHEN tooth.gingival_recession_level > 0 THEN 1 ELSE 0 END) as recession',
-            'SUM(CASE WHEN tooth.crown_reduction_level > 0 THEN 1 ELSE 0 END) as crown_reduction',
-            'SUM(CASE WHEN tooth.dental_calculus > 0 THEN 1 ELSE 0 END) as calculus',
-            'SUM(CASE WHEN tooth.periodontal_lesions > 0 THEN 1 ELSE 0 END) as periodontal',
-            'SUM(CASE WHEN tooth.lingual_wear > 0 THEN 1 ELSE 0 END) as lingual_wear',
-            'SUM(CASE WHEN tooth.caries > 0 THEN 1 ELSE 0 END) as caries',
-            'SUM(CASE WHEN tooth.vitrified_border > 0 THEN 1 ELSE 0 END) as vitrified_border',
-            'SUM(CASE WHEN tooth.pulp_chamber_exposure > 0 THEN 1 ELSE 0 END) as pulp_exposure',
-            'SUM(CASE WHEN tooth.gingivitis_edema > 0 THEN 1 ELSE 0 END) as gingivitis_edema',
+            'COUNT(DISTINCT CASE WHEN tooth.fracture_level > 0 THEN evaluation.id END) as fractures',
+            'COUNT(DISTINCT CASE WHEN tooth.pulpitis > 0 THEN evaluation.id END) as pulpitis',
+            'COUNT(DISTINCT CASE WHEN tooth.gingival_recession_level > 0 THEN evaluation.id END) as recession',
+            'COUNT(DISTINCT CASE WHEN tooth.crown_reduction_level > 0 THEN evaluation.id END) as crown_reduction',
+            'COUNT(DISTINCT CASE WHEN tooth.dental_calculus > 0 THEN evaluation.id END) as calculus',
+            'COUNT(DISTINCT CASE WHEN tooth.periodontal_lesions > 0 THEN evaluation.id END) as periodontal',
+            'COUNT(DISTINCT CASE WHEN tooth.lingual_wear > 0 THEN evaluation.id END) as lingual_wear',
+            'COUNT(DISTINCT CASE WHEN tooth.caries > 0 THEN evaluation.id END) as caries',
+            'COUNT(DISTINCT CASE WHEN tooth.vitrified_border > 0 THEN evaluation.id END) as vitrified_border',
+            'COUNT(DISTINCT CASE WHEN tooth.pulp_chamber_exposure > 0 THEN evaluation.id END) as pulp_exposure',
+            'COUNT(DISTINCT CASE WHEN tooth.gingivitis_edema > 0 THEN evaluation.id END) as gingivitis_edema',
         ])
         .getRawOne();
 

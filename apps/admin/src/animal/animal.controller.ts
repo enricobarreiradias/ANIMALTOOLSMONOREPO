@@ -1,11 +1,14 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UsePipes, ValidationPipe } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
 import { plainToInstance } from 'class-transformer'; 
 import { AnimalService } from './animal.service';
 import { CreateAnimalDto } from './dto/create-animal.dto';
 import { UpdateAnimalDto } from './dto/update-animal.dto';
 import { ExternalAnimalDto } from './dto/external-integration.dto';
+import { UseGuards } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 
 @Controller('animal')
+@UseGuards(AuthGuard('jwt'))
 export class AnimalController {
   constructor(private readonly animalService: AnimalService) {}
 

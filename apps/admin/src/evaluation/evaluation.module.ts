@@ -14,7 +14,7 @@ import { Media } from '../../../../libs/data/src/entities/media.entity';
   imports: [
     TypeOrmModule.forFeature([
       DentalEvaluation, 
-      ToothEvaluation, // <--- Importante: Não esqueça da nova tabela!
+      ToothEvaluation, 
       Animal, 
       User, 
       Media

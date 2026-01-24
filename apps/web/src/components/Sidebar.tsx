@@ -16,10 +16,18 @@ const drawerWidth = 280;
 export default function Sidebar() {
   const pathname = usePathname();
 
+  const handleLogout = () => {
+    // 1. Remove o token de autenticação
+    localStorage.removeItem('token');
+    // 2. Redireciona forçadamente para a tela de login (Refresh da página)
+    window.location.href = '/';
+  };
+
   const menuItems = [
-    { text: 'Dashboard', icon: <Dashboard />, path: '/' },
+    // CORREÇÃO: Dashboard agora aponta para '/dashboard', pois '/' é a tela de login
+    { text: 'Dashboard', icon: <Dashboard />, path: '/dashboard' },
     { text: 'Mesa de Avaliação', icon: <Assignment />, path: '/pending' },
-    {text: 'Relatórios', icon: <Assignment />, path: '/reports' },
+    { text: 'Relatórios', icon: <Assignment />, path: '/reports' },
     { text: 'Histórico', icon: <History />, path: '/history' },
   ];
 
@@ -42,7 +50,7 @@ export default function Sidebar() {
         <Box display="flex" alignItems="center" gap={1.5}>
           <Image 
             src="/logoFull.png" 
-            alt="Logo AnimalTools" 
+            alt="Logo VirtualVet" 
             width={200} 
             height={150} 
             style={{ objectFit: 'contain' }}
@@ -63,7 +71,6 @@ export default function Sidebar() {
                 sx={{
                   borderRadius: 2, 
                   py: 1.5,
-
                   '&.Mui-selected': { 
                     bgcolor: 'rgba(0, 0, 0, 0.04)', 
                     color: 'primary.main',
@@ -90,11 +97,12 @@ export default function Sidebar() {
                   <Person fontSize="small" />
                </Avatar>
                <Box flex={1}>
-                  <Typography variant="subtitle2" fontWeight="bold">Usuário</Typography>
+                  {/* Podes deixar estático ou pegar do localStorage se quiseres */}
+                  <Typography variant="subtitle2" fontWeight="bold">Administrador</Typography>
                   <Typography variant="caption" color="text.secondary">Logado</Typography>
                </Box>
-               <Tooltip title="Sair">
-                  <IconButton size="small" color="default">
+               <Tooltip title="Sair do Sistema">
+                  <IconButton size="small" color="default" onClick={handleLogout}>
                       <Logout fontSize="small" />
                   </IconButton>
                </Tooltip>

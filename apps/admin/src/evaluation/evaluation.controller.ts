@@ -17,7 +17,6 @@ import {
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
-// REMOVIDO: import { QuickMoultingDto } ...
 import { EvaluationService } from './evaluation.service';
 
 @Controller('evaluations')
