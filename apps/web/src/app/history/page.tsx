@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from 'react'; 
-import { useRouter } from 'next/navigation';
+import { useEffect, useState, useCallback } from 'react'; 
+import { useRouter, useSearchParams } from 'next/navigation';
 import { 
   Box, Typography, Paper, Table, TableBody, TableCell, 
   TableContainer, TableHead, TableRow, TablePagination, 
@@ -10,7 +10,7 @@ import {
 } from '@mui/material';
 import { 
   Search, Visibility, Edit, 
-  Warning, CheckCircle, AccessTime 
+  Warning, CheckCircle, AccessTime, Error as ErrorIcon
 } from '@mui/icons-material';
 import { EvaluationService } from '../../services/api';
 
@@ -22,31 +22,42 @@ interface HistoryItem {
   lastEvaluationDate: string;
   media: string[];
   worstFracture: number;
-  isCritical: boolean;
+  status: 'HEALTHY' | 'MODERATE' | 'CRITICAL';
 }
 
 export default function HistoryPage() {
   const router = useRouter();
-  
+  const searchParams = useSearchParams();
+
+  // Estados
   const [historyData, setHistoryData] = useState<HistoryItem[]>([]);
   const [total, setTotal] = useState(0); 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // Paginação
+  // Paginação e Filtros Locais
   const [page, setPage] = useState(0); 
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [searchTerm, setSearchTerm] = useState('');
 
-  useEffect(() => {
-    loadHistory();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, rowsPerPage]); 
-
-  const loadHistory = async () => {
+  // Função de carregamento (Memoizada para evitar loops)
+  const loadHistory = useCallback(async () => {
     setLoading(true);
+    
+    // Lemos os filtros diretamente da URL aqui dentro para garantir frescor
+    const urlPathology = searchParams.get('pathology') || '';
+    const urlFarm = searchParams.get('farm') || '';
+    const urlClient = searchParams.get('client') || '';
+
     try {
-      const response = await EvaluationService.getAllHistory(page + 1, rowsPerPage);
+      const response = await EvaluationService.getAllHistory(
+          page + 1, 
+          rowsPerPage, 
+          searchTerm, 
+          urlFarm, 
+          urlClient, 
+          urlPathology
+      );
       
       setHistoryData(response.data.data || []);
       setTotal(response.data.meta.total || 0);
@@ -57,7 +68,12 @@ export default function HistoryPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, rowsPerPage, searchTerm, searchParams]); // Adicionado searchParams como dependência
+
+  // Dispara o carregamento quando algo muda
+  useEffect(() => {
+    loadHistory();
+  }, [loadHistory]); 
 
   const handleChangePage = (event: unknown, newPage: number) => {
     setPage(newPage);
@@ -68,15 +84,18 @@ export default function HistoryPage() {
     setPage(0); 
   };
 
-  // --- CORREÇÃO AQUI: Adicionamos ?source=history ao link ---
   const handleEdit = (item: HistoryItem) => {
     router.push(`/evaluate/${item.animalId}?source=history`);
   };
 
-  const displayData = historyData.filter(item => 
-    item.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.breed.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const clearPathologyFilter = () => {
+      router.push('/history'); // Remove os parametros da URL
+  };
+
+  // Filtro visual extra (opcional, já que o backend filtra)
+  const displayData = historyData;
+
+  const activePathology = searchParams.get('pathology');
 
   return (
     <Box sx={{ p: 4, width: '100%' }}>
@@ -100,24 +119,30 @@ export default function HistoryPage() {
                 <Box>
                     <Typography variant="caption" fontWeight="bold" color="error">CRÍTICOS (PÁG)</Typography>
                     <Typography variant="h5" fontWeight={800} color="error">
-                        {historyData.filter(h => h.isCritical).length}
+                        {historyData.filter(h => h.status === 'CRITICAL').length}
                     </Typography>
                 </Box>
             </Stack>
         </Paper>
       </Box>
 
+      {/* AVISO DE FILTRO ATIVO */}
+      {activePathology && (
+          <Alert severity="info" sx={{ mb: 3 }} onClose={clearPathologyFilter}>
+              Filtrando por patologia: <strong>{activePathology.toUpperCase()}</strong>. Mostrando apenas animais afetados.
+          </Alert>
+      )}
+
       <Paper elevation={1} sx={{ p: 2, mb: 3, borderRadius: 2 }}>
         <TextField
             fullWidth
-            placeholder="Filtrar nesta página..."
+            placeholder="Buscar por brinco ou raça..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             InputProps={{
                 startAdornment: (<InputAdornment position="start"><Search color="action" /></InputAdornment>),
             }}
             size="small"
-            helperText="Nota: A busca filtra apenas os itens visíveis nesta página."
         />
       </Paper>
 
@@ -161,48 +186,27 @@ export default function HistoryPage() {
                                     <TableCell>
                                         <Chip label={row.breed} size="small" variant="outlined" />
                                     </TableCell>
+                                    
                                     <TableCell align="center">
-                                        {row.isCritical ? (
-                                            <Chip 
-                                                icon={<Warning />} 
-                                                label="Crítico / Tratamento" 
-                                                color="error" 
-                                                size="small" 
-                                                sx={{ fontWeight: 'bold' }}
-                                            />
-                                        ) : (
-                                            <Chip 
-                                                icon={<CheckCircle />} 
-                                                label="Saudável / Leve" 
-                                                color="success" 
-                                                size="small" 
-                                                variant="outlined"
-                                            />
+                                        {row.status === 'CRITICAL' && (
+                                            <Chip icon={<ErrorIcon />} label="Crítico / Tratamento" color="error" variant="filled" size="small" sx={{ fontWeight: 'bold' }} />
                                         )}
-                                        {row.worstFracture > 0 && (
-                                            <Typography variant="caption" display="block" color="text.secondary" mt={0.5}>
-                                                Maior Fratura: Score {row.worstFracture}
-                                            </Typography>
+                                        {row.status === 'MODERATE' && (
+                                            <Chip icon={<Warning />} label="Moderado / Atenção" color="warning" variant="filled" size="small" sx={{ fontWeight: 'bold', color: '#fff' }} />
+                                        )}
+                                        {(row.status === 'HEALTHY' || !row.status) && (
+                                            <Chip icon={<CheckCircle />} label="Saudável / Leve" color="success" variant="outlined" size="small" sx={{ fontWeight: 'bold', borderWidth: 2 }} />
                                         )}
                                     </TableCell>
+
                                     <TableCell align="center">
                                         <Stack direction="row" justifyContent="center" spacing={1}>
                                             <Tooltip title="Visualizar Detalhes">
-                                                <IconButton 
-                                                    size="small" 
-                                                    color="primary"
-                                                    onClick={() => handleEdit(row)}
-                                                >
+                                                <IconButton size="small" color="primary" onClick={() => handleEdit(row)}>
                                                     <Visibility />
                                                 </IconButton>
                                             </Tooltip>
-                                            <Button 
-                                                variant="contained" 
-                                                size="small" 
-                                                startIcon={<Edit />}
-                                                onClick={() => handleEdit(row)}
-                                                sx={{ borderRadius: 20, textTransform: 'none' }}
-                                            >
+                                            <Button variant="contained" size="small" startIcon={<Edit />} onClick={() => handleEdit(row)} sx={{ borderRadius: 20, textTransform: 'none' }}>
                                                 Editar
                                             </Button>
                                         </Stack>
@@ -212,7 +216,11 @@ export default function HistoryPage() {
                         ) : (
                             <TableRow>
                                 <TableCell colSpan={5} align="center" sx={{ py: 4 }}>
-                                    <Typography color="text.secondary">Nenhuma avaliação encontrada nesta página.</Typography>
+                                    <Typography color="text.secondary">
+                                        {activePathology 
+                                            ? `Nenhum animal encontrado com ${activePathology}.` 
+                                            : "Nenhuma avaliação encontrada."}
+                                    </Typography>
                                 </TableCell>
                             </TableRow>
                         )}

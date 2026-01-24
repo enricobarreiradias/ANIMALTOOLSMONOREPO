@@ -83,8 +83,9 @@ export class EvaluationController {
     @Query('search') search?: string,
     @Query('filterFarm') filterFarm?: string,
     @Query('filterClient') filterClient?: string,
+    @Query('filterPathology') filterPathology?: string, // <--- ADICIONADO
   ) {
-    return await this.evaluationService.findAllHistory(page, limit, search, filterFarm, filterClient);
+    return await this.evaluationService.findAllHistory(page, limit, search, filterFarm, filterClient, filterPathology);
   }
 
   @Get('seed') 
@@ -117,4 +118,13 @@ export class EvaluationController {
     return await this.evaluationService.remove(+id);
   }
 
+  @Get('reports/stats')
+  async getReportStats(
+    @Query('filterFarm') filterFarm?: string,
+    @Query('filterClient') filterClient?: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ) {
+    return await this.evaluationService.getReportStats(filterFarm, filterClient, startDate, endDate);
+  }
 }
