@@ -1,34 +1,29 @@
 import { 
-  Controller, 
-  Get, 
-  Post, 
-  Body, 
-  UseInterceptors, 
-  UploadedFiles, 
-  ValidationPipe, 
-  UsePipes,
-  Param, 
-  Delete, 
-  Patch,
-  Query,
-  DefaultValuePipe,
-  ParseIntPipe
+  Controller, Get, Post, Body, UseInterceptors, UploadedFiles, 
+  ValidationPipe, UsePipes, Param, Delete, Patch, Query, 
+  DefaultValuePipe, ParseIntPipe, UseGuards 
 } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport'; 
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { EvaluationService } from './evaluation.service';
+import { QuickMoultingDto } from './dto/quick-moulting.dto';
+import { CreateEvaluationDto } from './dto/create-evaluation.dto';
+import { UpdateEvaluationDto } from './dto/update-evaluation.dto';
 
 @Controller('evaluations')
+@UseGuards(AuthGuard('jwt'))
 export class EvaluationController {
   constructor(private readonly evaluationService: EvaluationService) {}
 
   @Post()
-  @UsePipes(new ValidationPipe({ transform: true }))
-  async create(@Body() createEvaluationDto: any) { 
+  @UsePipes(new ValidationPipe({ transform: true, whitelist: true })) 
+  async create(@Body() createEvaluationDto: CreateEvaluationDto) { 
     return await this.evaluationService.create(createEvaluationDto);
   }
 
+  
   @Post('upload-animal')
   @UseInterceptors(FileFieldsInterceptor([
     { name: 'frontal', maxCount: 1 },
@@ -108,7 +103,11 @@ export class EvaluationController {
   }
 
   @Patch(':id')
-  async update(@Param('id') id: string, @Body() updateEvaluationDto: any) {
+  @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
+  async update(
+    @Param('id') id: string, 
+    @Body() updateEvaluationDto: UpdateEvaluationDto // <--- ADEUS ANY!
+  ) {
     return await this.evaluationService.update(+id, updateEvaluationDto);
   }
 
@@ -126,4 +125,11 @@ export class EvaluationController {
   ) {
     return await this.evaluationService.getReportStats(filterFarm, filterClient, startDate, endDate);
   }
+
+  @Post('quick-moulting')
+  @UsePipes(new ValidationPipe({ transform: true }))
+  async quickMoulting(@Body() payload: QuickMoultingDto) {
+    return await this.evaluationService.applyQuickMoulting(payload);
+  }
+
 }

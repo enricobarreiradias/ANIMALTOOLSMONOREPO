@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource, DeepPartial } from 'typeorm'; 
-
+import { QuickMoultingDto, MoultingStage } from './dto/quick-moulting.dto';
 import { DentalEvaluation } from '@app/data/entities/dental-evaluation.entity';
 import { ToothEvaluation } from '@app/data/entities/tooth-evaluation.entity';
 import { Animal } from '@app/data/entities/animal.entity';
@@ -108,7 +108,63 @@ export class EvaluationService {
     return this.findOne(savedEvaluation.id);
   }
 
-  // 🚨 REMOVIDO: Método applyQuickMoulting inteiro
+  async applyQuickMoulting(dto: QuickMoultingDto) {
+    // 1. Cria a estrutura base de dentes
+    const allTeethCodes = [
+      'I1_LEFT', 'I1_RIGHT', 
+      'I2_LEFT', 'I2_RIGHT', 
+      'I3_LEFT', 'I3_RIGHT', 
+      'I4_LEFT', 'I4_RIGHT'
+    ];
+
+    const teethData = allTeethCodes.map(code => {
+      // Regra de Negócio que estava no Front
+      const isPermanent = this.checkIsPermanent(code, dto.stage);
+      
+      return {
+        toothCode: code,
+        isPresent: true,
+        toothType: isPermanent ? 'PERMANENT' : 'DECIDUOUS', // Use o Enum correto do seu projeto
+        // Define tudo como saudável (Severity 0)
+        fractureLevel: 0,
+        pulpitis: 0,
+        crownReductionLevel: 0,
+        gingivalRecessionLevel: 0,
+        lingualWear: 0,
+        periodontalLesions: 0,
+        caries: 0,
+        abnormalColor: 0,
+        gingivitisColor: 0
+      };
+    });
+
+    // 2. Salva ou Atualiza a Avaliação
+    // Aqui reutilizamos o método 'create' que já tens, ou adaptamos para atualizar
+    return this.create({
+      animalId: dto.animalId,
+      evaluatorId: dto.evaluatorId || 1, // Fallback
+      notes: `Muda rápida aplicada: ${dto.stage}`,
+      teeth: teethData
+    });
+  }
+
+  // Função auxiliar privada (Regra Veterinária)
+  private checkIsPermanent(code: string, stage: MoultingStage): boolean {
+    const prefix = code.split('_')[0]; 
+
+    switch (prefix) {
+      case 'I1': 
+        return [MoultingStage.D2, MoultingStage.D4, MoultingStage.D6, MoultingStage.BC].includes(stage);
+      case 'I2': 
+        return [MoultingStage.D4, MoultingStage.D6, MoultingStage.BC].includes(stage);
+      case 'I3': 
+        return [MoultingStage.D6, MoultingStage.BC].includes(stage);
+      case 'I4': 
+        return [MoultingStage.BC].includes(stage);
+      default: 
+        return false;
+    }
+  }
 
   // --- 2. PENDENTES COM FILTROS E PAGINAÇÃO ---
   async findPendingEvaluations(
@@ -492,7 +548,7 @@ export class EvaluationService {
       await this.toothRepository.save(teethEntities);
   }
 
-  // --- 11. RELATÓRIOS AVANÇADOS (CORRIGIDO) ---
+  // --- 11. RELATÓRIOS AVANÇADOS (COM FILTRO DE DATA) ---
   async getReportStats(
       filterFarm?: string,
       filterClient?: string,
@@ -504,17 +560,30 @@ export class EvaluationService {
         .leftJoin('evaluation.animal', 'animal')
         .leftJoin('evaluation.teeth', 'tooth');
 
-    // Aplicar Filtros na Base
+    // --- FILTROS DE TEXTO ---
     if (filterFarm && filterFarm !== 'all') {
         baseQuery.andWhere('animal.farm ILIKE :farm', { farm: `%${filterFarm}%` });
     }
     if (filterClient && filterClient !== 'all') {
         baseQuery.andWhere('animal.client ILIKE :client', { client: `%${filterClient}%` });
     }
-    // Adicione filtro de data aqui se necessário
+
+    // --- FILTRO DE DATA (NOVO) ---
+    if (startDate && endDate) {
+        // Ajuste para garantir que apanha o dia inteiro (00:00:00 até 23:59:59)
+        const start = new Date(startDate);
+        start.setHours(0, 0, 0, 0);
+        
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+
+        baseQuery.andWhere('evaluation.evaluationDate BETWEEN :start AND :end', { 
+            start, 
+            end 
+        });
+    }
 
     // 2. Query para CLASSIFICAÇÃO (Geral) - Clone 1
-    // Precisamos clonar para não sujar a query base com o GroupBy
     const classificationQuery = baseQuery.clone();
     
     const evaluationsData = await classificationQuery
@@ -532,7 +601,7 @@ export class EvaluationService {
             'MAX(tooth.pulp_chamber_exposure) as max_exposure',
             'MAX(tooth.gingivitis_edema) as max_edema'
         ])
-        .groupBy('evaluation.id') // <--- Agrupamento aplicado apenas aqui
+        .groupBy('evaluation.id')
         .getRawMany();
 
     let healthy = 0;
@@ -543,33 +612,31 @@ export class EvaluationService {
         const fracture = Number(ev.max_fracture || 0);
         const pulpitis = Number(ev.max_pulpitis || 0);
         const recession = Number(ev.max_recession || 0);
-        const crown = Number(ev.max_crown || 0);
-        const calculus = Number(ev.max_calculus || 0);
-        const periodontal = Number(ev.max_periodontal || 0);
-        const lingual = Number(ev.max_lingual || 0);
-        const caries = Number(ev.max_caries || 0);
-        const vitrified = Number(ev.max_vitrified || 0);
-        const exposure = Number(ev.max_exposure || 0);
-        const edema = Number(ev.max_edema || 0);
-
+        
+        // Severidade 2 Nestes = CRÍTICO (Regra Dr. Iveraldo)
         if (fracture === 2 || pulpitis === 2 || recession === 2) {
             critical++;
-        } else if (
-            fracture >= 1 || pulpitis >= 1 || recession >= 1 ||
-            crown >= 1 || calculus >= 1 || periodontal >= 1 || 
-            lingual >= 1 || caries >= 1 || 
-            vitrified >= 1 || exposure >= 1 || edema >= 1
-        ) {
-            moderate++;
         } else {
-            healthy++;
+            // Verificar se há algum Moderado (Severidade >= 1) nos outros
+            const values = [
+                fracture, pulpitis, recession,
+                Number(ev.max_crown || 0), Number(ev.max_calculus || 0),
+                Number(ev.max_periodontal || 0), Number(ev.max_lingual || 0),
+                Number(ev.max_caries || 0), Number(ev.max_vitrified || 0),
+                Number(ev.max_exposure || 0), Number(ev.max_edema || 0)
+            ];
+            
+            if (values.some(v => v >= 1)) {
+                moderate++;
+            } else {
+                healthy++;
+            }
         }
     });
 
     const total = evaluationsData.length;
 
-    // 3. Query para ESTATÍSTICAS DE PATOLOGIA - Clone 2 (A partir da base LIMPA)
-    // Aqui NÃO TEM groupBy('evaluation.id'), então ele soma o banco todo corretamente
+    // 3. Query para ESTATÍSTICAS DE PATOLOGIA - Clone 2
     const statsQuery = baseQuery.clone();
     
     const stats = await statsQuery
@@ -590,12 +657,8 @@ export class EvaluationService {
 
     const safeStats = stats || {}; 
 
-    // Soma Total de Lesões
     const totalLesions = 
-        Number(safeStats.fractures || 0) + Number(safeStats.pulpitis || 0) + Number(safeStats.recession || 0) + 
-        Number(safeStats.crown_reduction || 0) + Number(safeStats.calculus || 0) + Number(safeStats.periodontal || 0) +
-        Number(safeStats.lingual_wear || 0) + Number(safeStats.caries || 0) + Number(safeStats.vitrified_border || 0) +
-        Number(safeStats.pulp_exposure || 0) + Number(safeStats.gingivitis_edema || 0);
+        Object.values(safeStats).reduce((acc: number, val) => acc + Number(val || 0), 0) as number;
 
     return {
         general: {

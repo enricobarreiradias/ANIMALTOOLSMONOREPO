@@ -52,6 +52,8 @@ export const AnimalService = {
   create: (data: CreateData) => api.post('/animal', data),
   getFarms: () => api.get<string[]>('/animal/filters/farms'),
   getClients: () => api.get<string[]>('/animal/filters/clients'),
+
+  sync: () => api.get('/animal/integration/sync'),
 };
 
 export const EvaluationService = {
@@ -70,6 +72,19 @@ export const EvaluationService = {
   applyQuickMoulting: (data: { animalId: string, stage: string, evaluatorId?: number }) => 
     api.post('/evaluations/quick-moulting', data),
 
-  getReportStats: (farm = '', client = '', start = '', end = '') => 
-    api.get(`/evaluations/reports/stats?filterFarm=${farm}&filterClient=${client}&startDate=${start}&endDate=${end}&_t=${Date.now()}`),
+  getReportStats: (
+      farm?: string, 
+      client?: string, 
+      startDate?: string, 
+      endDate?: string    
+  ) => {
+    const params = new URLSearchParams();
+    if (farm && farm !== 'all') params.append('filterFarm', farm);
+    if (client && client !== 'all') params.append('filterClient', client);
+    if (startDate) params.append('startDate', startDate);
+    if (endDate) params.append('endDate', endDate);
+
+    return api.get(`/evaluations/reports/stats?${params.toString()}`);
+  },
+
 };

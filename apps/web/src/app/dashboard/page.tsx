@@ -3,12 +3,14 @@
 import { useEffect, useState } from 'react';
 import { 
   Box, Grid, Card, CardContent, Typography, 
-  CircularProgress, Stack, Chip, Divider, LinearProgress, Alert 
+  CircularProgress, Stack, Chip, Divider, LinearProgress, Alert,
+  Button
 } from '@mui/material';
 import { 
-  Pets, Assessment, Warning, TrendingUp, CalendarToday, CheckCircle 
+  Pets, Assessment, Warning, TrendingUp, CalendarToday, CheckCircle,
+  Sync
 } from '@mui/icons-material';
-import { api } from '@/services/api';
+import { api, AnimalService } from '@/services/api';
 
 // --- INTERFACES ---
 interface DashboardStats {
@@ -33,6 +35,26 @@ export default function DashboardPage() {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [syncing, setSyncing] = useState(false); 
+  const [successMsg, setSuccessMsg] = useState('');
+
+  const handleSync = async () => {
+    setSyncing(true);
+    setSuccessMsg('');
+    setError('');
+    try {
+      await AnimalService.sync();
+      setSuccessMsg('Sincronização realizada com sucesso! Recarregando dados...');
+      
+      // Opcional: Recarregar os dados do dashboard após sync
+      setTimeout(() => window.location.reload(), 1500); 
+    } catch (err) {
+      console.error(err);
+      setError('Falha ao sincronizar com o ERP externo.');
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -114,13 +136,31 @@ export default function DashboardPage() {
             Visão geral da saúde do rebanho e métricas de avaliação.
           </Typography>
         </Box>
-        <Chip 
-          icon={<CalendarToday sx={{ fontSize: 16 }} />} 
-          label={new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })} 
-          variant="outlined" 
-          sx={{ bgcolor: 'white', fontWeight: 500 }}
-        />
+
+        <Stack direction="row" spacing={2} alignItems="center">
+            {/* --- NOVO BOTÃO DE SYNC --- */}
+            <Button 
+                variant="contained" 
+                color="primary" 
+                startIcon={syncing ? <CircularProgress size={20} color="inherit" /> : <Sync />}
+                onClick={handleSync}
+                disabled={syncing}
+                sx={{ height: 40, textTransform: 'none', fontWeight: 'bold' }}
+            >
+                {syncing ? 'Sincronizando...' : 'Sincronizar ERP'}
+            </Button>
+
+            <Chip 
+            icon={<CalendarToday sx={{ fontSize: 16 }} />} 
+            label={new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })} 
+            variant="outlined" 
+            sx={{ bgcolor: 'white', fontWeight: 500, height: 40 }}
+            />
+        </Stack>
       </Box>
+
+      {/* Se houver mensagem de sucesso, mostre aqui */}
+      {successMsg && <Alert severity="success" sx={{ mb: 3 }}>{successMsg}</Alert>}
 
       {/* KPIs Principais */}
       <Grid container spacing={3} mb={4}>

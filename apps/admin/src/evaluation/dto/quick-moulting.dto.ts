@@ -1,18 +1,23 @@
-import { IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
-import { MoultingStage } from '@app/data/enums/dental-evaluation.enums';
+import { IsEnum, IsNotEmpty, IsString, IsNumber, IsOptional } from 'class-validator';
+
+export enum MoultingStage {
+  DL = 'DL', // Dente de Leite
+  D2 = '2D', // 2 Dentes
+  D4 = '4D', // 4 Dentes
+  D6 = '6D', // 6 Dentes
+  BC = 'BC'  // Boca Cheia
+}
 
 export class QuickMoultingDto {
-  @ApiProperty({ description: 'ID do Animal', example: 1 })
+  @IsString()
   @IsNotEmpty()
-  animalId: number | string; 
+  animalId: string;
 
-  @ApiProperty({ description: 'ID do Avaliador (User)', example: 1 })
+  @IsEnum(MoultingStage)
+  @IsNotEmpty()
+  stage: MoultingStage;
+
+  @IsNumber()
   @IsOptional()
   evaluatorId?: number;
-
-  @ApiProperty({ enum: MoultingStage, description: 'Estágio da muda (Ex: DL, D2, BC)' })
-  @IsEnum(MoultingStage)
-  @IsString() 
-  stage: MoultingStage;
 }

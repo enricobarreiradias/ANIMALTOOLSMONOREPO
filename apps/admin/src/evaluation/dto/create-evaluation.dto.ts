@@ -1,100 +1,105 @@
-import { IsNotEmpty, IsString, IsBoolean, IsNumber, IsOptional, Min, Max } from 'class-validator';
+import { 
+  IsString, 
+  IsInt, 
+  IsArray, 
+  ValidateNested, 
+  IsOptional, 
+  IsEnum, 
+  IsBoolean, 
+  Min, 
+  Max 
+} from 'class-validator';
+import { Type } from 'class-transformer';
 
+// Enums alinhados com o Frontend
+export enum ToothType {
+  DECIDUOUS = 'DECIDUOUS',
+  PERMANENT = 'PERMANENT'
+}
+
+export enum EvaluationStatus {
+  HEALTHY = 'HEALTHY',
+  MODERATE = 'MODERATE',
+  CRITICAL = 'CRITICAL'
+}
+
+// DTO para cada Dente individual
+export class ToothEvaluationDto {
+  @IsString()
+  toothCode: string; // Ex: "I1_LEFT"
+
+  @IsBoolean()
+  isPresent: boolean;
+
+  @IsEnum(ToothType)
+  toothType: ToothType;
+
+  // --- PARÂMETROS CRÍTICOS (Escala 0 a 2) ---
+  // 0 = Normal, 1 = Moderado, 2 = Crítico 
+  
+  @IsInt() @Min(0) @Max(2) @IsOptional()
+  fractureLevel?: number;
+
+  @IsInt() @Min(0) @Max(2) @IsOptional()
+  pulpitis?: number;
+
+  @IsInt() @Min(0) @Max(2) @IsOptional()
+  gingivalRecessionLevel?: number;
+
+  @IsInt() @Min(0) @Max(2) @IsOptional()
+  crownReductionLevel?: number;
+
+  // --- OUTROS INDICADORES (Escala 0 a 2) ---
+
+  @IsInt() @Min(0) @Max(2) @IsOptional()
+  lingualWear?: number;
+
+  @IsInt() @Min(0) @Max(2) @IsOptional()
+  periodontalLesions?: number;
+
+  @IsInt() @Min(0) @Max(2) @IsOptional()
+  dentalCalculus?: number;
+
+  @IsInt() @Min(0) @Max(2) @IsOptional()
+  caries?: number;
+
+  // --- CORES (Escala 0 a 1) ---
+  // 0 = Normal, 1 = Alterada [cite: 71]
+
+  @IsInt() @Min(0) @Max(1) @IsOptional()
+  gingivitisColor?: number;
+
+  @IsInt() @Min(0) @Max(1) @IsOptional()
+  abnormalColor?: number;
+
+  // --- DETALHES ESPECÍFICOS ---
+
+  @IsInt() @Min(0) @Max(2) @IsOptional()
+  vitrifiedBorder?: number;
+
+  @IsInt() @Min(0) @Max(2) @IsOptional()
+  pulpChamberExposure?: number;
+
+  @IsInt() @Min(0) @Max(2) @IsOptional()
+  gingivitisEdema?: number;
+}
+
+// DTO Principal da Avaliação
 export class CreateEvaluationDto {
-  @IsNotEmpty()
   @IsString()
   animalId: string;
 
-  @IsNotEmpty()
+  @IsInt()
+  @IsOptional()
+  evaluatorId?: number;
+
   @IsString()
-  evaluatorId: string;
-
   @IsOptional()
-  @IsString()
-  generalObservations?: string;
+  notes?: string;
 
-  // --- VARIÁVEIS DO Q&A (Tabela 1) ---
-
-  // 1. Presença ou ausência do dente (Binário: 0/1)
-  @IsOptional()
-  @IsBoolean()
-  toothPresence?: boolean;
-
-  // 2. Fratura do dente (Severidade 1-5)
-  @IsOptional()
-  @IsNumber()
-  @Min(0) @Max(5)
-  toothFracture?: number;
-
-  // 3. Redução da coroa dentária (Severidade 1-5)
-  @IsOptional()
-  @IsNumber()
-  @Min(0) @Max(5)
-  crownReduction?: number;
-
-  // 4. Superfície de corte com bordo vitrificado (Severidade 1-5)
-  @IsOptional()
-  @IsNumber()
-  @Min(0) @Max(5)
-  vitrifiedBorder?: number;
-
-  // 5. Desgaste lingual (Severidade 1-5)
-  @IsOptional()
-  @IsNumber()
-  @Min(0) @Max(5)
-  lingualWear?: number;
-
-  // 6. Pulpite (Severidade 1-5)
-  @IsOptional()
-  @IsNumber()
-  @Min(0) @Max(5)
-  pulpitis?: number;
-
-  // 7. Exposição da câmara pulpar (Severidade 1-5)
-  @IsOptional()
-  @IsNumber()
-  @Min(0) @Max(5)
-  pulpChamberExposure?: number;
-
-  // 8. Cálculo dentário (Severidade 1-5)
-  @IsOptional()
-  @IsNumber()
-  @Min(0) @Max(5)
-  dentalCalculus?: number;
-
-  // 9. Coloração anormal (Binário/Severidade -> Vamos usar 0-5 sendo 0 normal)
-  @IsOptional()
-  @IsNumber()
-  @Min(0) @Max(5)
-  abnormalColor?: number;
-
-  // 10. Cárie (Severidade 1-5)
-  @IsOptional()
-  @IsNumber()
-  @Min(0) @Max(5)
-  caries?: number;
-
-  // 11. Recessão gengival (Severidade 1-5)
-  @IsOptional()
-  @IsNumber()
-  @Min(0) @Max(5)
-  gingivalRecession?: number;
-
-  // 12. Lesões periodontais (Severidade 1-5)
-  @IsOptional()
-  @IsNumber()
-  @Min(0) @Max(5)
-  periodontalLesions?: number;
-
-  // 13. Gengivite - Edema (Severidade 1-5)
-  @IsOptional()
-  @IsNumber()
-  @Min(0) @Max(5)
-  gingivitisEdema?: number;
-
-  // 14. Gengivite - Coloração (Severidade 1-5)
-  @IsOptional()
-  @IsNumber()
-  @Min(0) @Max(5)
-  gingivitisColor?: number;
+  // Validação do Array de Dentes
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ToothEvaluationDto)
+  teeth: ToothEvaluationDto[];
 }
