@@ -6,6 +6,7 @@ import { join } from 'path';
 import { EvaluationModule } from './evaluation/evaluation.module';
 import { AnimalModule } from './animal/animal.module';
 import { AuthModule } from './auth/auth.module';
+import { AuditModule } from './audit/audit.module';
 
 @Module({
   imports: [
@@ -29,9 +30,11 @@ import { AuthModule } from './auth/auth.module';
       synchronize: true,
       autoLoadEntities: true,
     }),
+    
     EvaluationModule,
     AnimalModule,
     AuthModule,
+    AuditModule, 
   ],
 })
 export class AppModule {}

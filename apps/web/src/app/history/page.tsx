@@ -2,17 +2,26 @@
 
 import { useEffect, useState, useCallback } from 'react'; 
 import { useRouter, useSearchParams } from 'next/navigation';
+// 1. Import necessário para carregar o PDF sem erros de servidor
+import dynamic from 'next/dynamic';
 import { 
   Box, Typography, Paper, Table, TableBody, TableCell, 
   TableContainer, TableHead, TableRow, TablePagination, 
   TextField, InputAdornment, Chip, Button, Avatar, CircularProgress, 
-  Stack, Alert, IconButton, Tooltip
+  Stack, Alert, IconButton, Tooltip, Dialog, DialogTitle, List, ListItem, Divider
 } from '@mui/material';
 import { 
-  Search, Visibility, Edit, 
-  Warning, CheckCircle, AccessTime, Error as ErrorIcon
+  Search, Visibility, Edit, Block,
+  Warning, CheckCircle, AccessTime, Error as ErrorIcon, Person,
+  Description, GridView, Close
 } from '@mui/icons-material';
-import { EvaluationService } from '../../services/api';
+import { EvaluationService, AuthService } from '../../services/api';
+
+// 2. Importação Dinâmica do Componente de PDF
+const ReportViewerModal = dynamic(() => import('../../components/pdf/ReportViewerModal'), {
+  ssr: false, // Desabilita renderização no servidor (obrigatório para react-pdf)
+  loading: () => <p>Carregando módulo de impressão...</p>
+});
 
 interface HistoryItem {
   id: string;
@@ -23,6 +32,14 @@ interface HistoryItem {
   media: string[];
   worstFracture: number;
   status: 'HEALTHY' | 'MODERATE' | 'CRITICAL';
+  evaluatorName?: string;
+  evaluatorId?: number;
+}
+
+interface UserInfo {
+    id: number;
+    email: string;
+    role: string;
 }
 
 export default function HistoryPage() {
@@ -34,43 +51,48 @@ export default function HistoryPage() {
   const [total, setTotal] = useState(0); 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  
+  const [currentUser, setCurrentUser] = useState<UserInfo | null>(null);
 
-  // Paginação e Filtros Locais
+  // --- ESTADOS PARA O MODAL DE ESCOLHA ---
+  const [viewModalOpen, setViewModalOpen] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<HistoryItem | null>(null);
+  
+  // --- 3. NOVOS ESTADOS PARA O MODAL DE PDF ---
+  const [reportOpen, setReportOpen] = useState(false);
+  const [reportId, setReportId] = useState<string | null>(null);
+  // --------------------------------------------
+
   const [page, setPage] = useState(0); 
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Função de carregamento (Memoizada para evitar loops)
+  useEffect(() => {
+    AuthService.me()
+        .then((response) => setCurrentUser(response.data.user))
+        .catch((err) => console.error("Erro ao identificar usuário:", err));
+  }, []);
+
   const loadHistory = useCallback(async () => {
     setLoading(true);
-    
-    // Lemos os filtros diretamente da URL aqui dentro para garantir frescor
     const urlPathology = searchParams.get('pathology') || '';
     const urlFarm = searchParams.get('farm') || '';
     const urlClient = searchParams.get('client') || '';
 
     try {
       const response = await EvaluationService.getAllHistory(
-          page + 1, 
-          rowsPerPage, 
-          searchTerm, 
-          urlFarm, 
-          urlClient, 
-          urlPathology
+          page + 1, rowsPerPage, searchTerm, urlFarm, urlClient, urlPathology
       );
-      
       setHistoryData(response.data.data || []);
       setTotal(response.data.meta.total || 0);
-      
     } catch (err) {
       console.error(err);
       setError('Erro ao carregar histórico de avaliações.');
     } finally {
       setLoading(false);
     }
-  }, [page, rowsPerPage, searchTerm, searchParams]); // Adicionado searchParams como dependência
+  }, [page, rowsPerPage, searchTerm, searchParams]); 
 
-  // Dispara o carregamento quando algo muda
   useEffect(() => {
     loadHistory();
   }, [loadHistory]); 
@@ -84,17 +106,38 @@ export default function HistoryPage() {
     setPage(0); 
   };
 
+  // --- LÓGICA DE NAVEGAÇÃO ---
   const handleEdit = (item: HistoryItem) => {
     router.push(`/evaluate/${item.animalId}?source=history`);
   };
 
-  const clearPathologyFilter = () => {
-      router.push('/history'); // Remove os parametros da URL
+  // Abre o Modal de Escolha
+  const handleOpenViewOptions = (item: HistoryItem) => {
+      setSelectedItem(item);
+      setViewModalOpen(true);
   };
 
-  // Filtro visual extra (opcional, já que o backend filtra)
-  const displayData = historyData;
+  // Opção 1: Ir para o Odontograma (Apenas Leitura)
+  const handleViewOdontogram = () => {
+      if (selectedItem) {
+        router.push(`/evaluate/${selectedItem.animalId}?source=history&mode=readonly`);
+      }
+  };
 
+  // Opção 2: Mini Relatório (AGORA FUNCIONAL)
+  const handleViewReport = () => {
+      if (selectedItem) {
+          setReportId(selectedItem.id); // Define qual avaliação mostrar
+          setReportOpen(true);          // Abre o Modal do PDF
+          setViewModalOpen(false);      // Fecha o modal de escolha
+      }
+  };
+
+  const clearPathologyFilter = () => {
+      router.push('/history'); 
+  };
+
+  const displayData = historyData;
   const activePathology = searchParams.get('pathology');
 
   return (
@@ -126,7 +169,6 @@ export default function HistoryPage() {
         </Paper>
       </Box>
 
-      {/* AVISO DE FILTRO ATIVO */}
       {activePathology && (
           <Alert severity="info" sx={{ mb: 3 }} onClose={clearPathologyFilter}>
               Filtrando por patologia: <strong>{activePathology.toUpperCase()}</strong>. Mostrando apenas animais afetados.
@@ -159,13 +201,19 @@ export default function HistoryPage() {
                             <TableCell>Data</TableCell>
                             <TableCell>Animal</TableCell>
                             <TableCell>Raça</TableCell>
+                            <TableCell>Avaliador</TableCell>
                             <TableCell align="center">Diagnóstico Rápido</TableCell>
                             <TableCell align="center">Ações</TableCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
                         {displayData.length > 0 ? (
-                            displayData.map((row) => (
+                            displayData.map((row) => {
+                                const isAdmin = currentUser?.role === 'admin';
+                                const isOwner = currentUser?.id === row.evaluatorId;
+                                const canEdit = isAdmin || isOwner;
+
+                                return (
                                 <TableRow key={row.id} hover>
                                     <TableCell>
                                         <Box display="flex" alignItems="center" gap={1}>
@@ -187,6 +235,15 @@ export default function HistoryPage() {
                                         <Chip label={row.breed} size="small" variant="outlined" />
                                     </TableCell>
                                     
+                                    <TableCell>
+                                        <Box display="flex" alignItems="center" gap={1}>
+                                            <Person fontSize="small" color="disabled" />
+                                            <Typography variant="body2" color="text.secondary">
+                                                {row.evaluatorName || 'Sistema'}
+                                            </Typography>
+                                        </Box>
+                                    </TableCell>
+
                                     <TableCell align="center">
                                         {row.status === 'CRITICAL' && (
                                             <Chip icon={<ErrorIcon />} label="Crítico / Tratamento" color="error" variant="filled" size="small" sx={{ fontWeight: 'bold' }} />
@@ -201,26 +258,38 @@ export default function HistoryPage() {
 
                                     <TableCell align="center">
                                         <Stack direction="row" justifyContent="center" spacing={1}>
-                                            <Tooltip title="Visualizar Detalhes">
-                                                <IconButton size="small" color="primary" onClick={() => handleEdit(row)}>
+                                            
+                                            {/* BOTÃO OLHO */}
+                                            <Tooltip title="Opções de Visualização">
+                                                <IconButton size="small" color="primary" onClick={() => handleOpenViewOptions(row)}>
                                                     <Visibility />
                                                 </IconButton>
                                             </Tooltip>
-                                            <Button variant="contained" size="small" startIcon={<Edit />} onClick={() => handleEdit(row)} sx={{ borderRadius: 20, textTransform: 'none' }}>
-                                                Editar
-                                            </Button>
+                                            
+                                            {/* BOTÃO EDITAR */}
+                                            <Tooltip title={canEdit ? "Editar Avaliação" : "Você não tem permissão para editar"}>
+                                                <span> 
+                                                    <Button 
+                                                        variant="contained" 
+                                                        size="small" 
+                                                        startIcon={canEdit ? <Edit /> : <Block />} 
+                                                        onClick={() => handleEdit(row)} 
+                                                        disabled={!canEdit} 
+                                                        sx={{ borderRadius: 20, textTransform: 'none' }}
+                                                        color={canEdit ? "primary" : "inherit"}
+                                                    >
+                                                        {canEdit ? "Editar" : "Restrito"}
+                                                    </Button>
+                                                </span>
+                                            </Tooltip>
                                         </Stack>
                                     </TableCell>
                                 </TableRow>
-                            ))
+                            )})
                         ) : (
                             <TableRow>
-                                <TableCell colSpan={5} align="center" sx={{ py: 4 }}>
-                                    <Typography color="text.secondary">
-                                        {activePathology 
-                                            ? `Nenhum animal encontrado com ${activePathology}.` 
-                                            : "Nenhuma avaliação encontrada."}
-                                    </Typography>
+                                <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
+                                    <Typography color="text.secondary">Nenhuma avaliação encontrada.</Typography>
                                 </TableCell>
                             </TableRow>
                         )}
@@ -241,6 +310,73 @@ export default function HistoryPage() {
             </>
         )}
       </TableContainer>
+
+      {/* --- MODAL DE ESCOLHA DE VISUALIZAÇÃO --- */}
+      <Dialog onClose={() => setViewModalOpen(false)} open={viewModalOpen} maxWidth="xs" fullWidth>
+        <DialogTitle sx={{ textAlign: 'center', fontWeight: 'bold', pt: 3 }}>
+            O que deseja visualizar?
+            <IconButton
+                onClick={() => setViewModalOpen(false)}
+                sx={{ position: 'absolute', right: 8, top: 8 }}
+            >
+                <Close />
+            </IconButton>
+        </DialogTitle>
+        <List sx={{ pt: 0, px: 2, pb: 3 }}>
+            
+            {/* OPÇÃO 1: ODONTOGRAMA */}
+            <ListItem disableGutters>
+                <Button 
+                    fullWidth 
+                    variant="outlined" 
+                    size="large"
+                    onClick={handleViewOdontogram}
+                    startIcon={<GridView />}
+                    sx={{ justifyContent: 'flex-start', py: 1.5, borderRadius: 2, borderColor: 'divider' }}
+                >
+                    <Box textAlign="left" ml={1}>
+                        <Typography variant="subtitle2" fontWeight="bold" color="text.primary">
+                            Odontograma Completo
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                            Visualizar a boca e os dentes (sem editar).
+                        </Typography>
+                    </Box>
+                </Button>
+            </ListItem>
+            
+            <Divider sx={{ my: 1, borderStyle: 'dashed' }} />
+
+            {/* OPÇÃO 2: RELATÓRIO PDF */}
+            <ListItem disableGutters>
+                <Button 
+                    fullWidth 
+                    variant="contained" 
+                    size="large"
+                    onClick={handleViewReport}
+                    startIcon={<Description />}
+                    sx={{ justifyContent: 'flex-start', py: 1.5, borderRadius: 2 }}
+                >
+                    <Box textAlign="left" ml={1}>
+                        <Typography variant="subtitle2" fontWeight="bold">
+                            Mini Relatório PDF
+                        </Typography>
+                        <Typography variant="caption" sx={{ opacity: 0.8 }}>
+                            Resumo, fotos e opção de download.
+                        </Typography>
+                    </Box>
+                </Button>
+            </ListItem>
+        </List>
+      </Dialog>
+
+      {/* 4. MODAL DO VISUALIZADOR DE PDF */}
+      <ReportViewerModal 
+        open={reportOpen}
+        onClose={() => setReportOpen(false)}
+        evaluationId={reportId}
+      />
+
     </Box>
   );
 }

@@ -1,11 +1,10 @@
-import { Injectable,HttpException, NotFoundException, Logger, HttpStatus } from '@nestjs/common';
+import { Injectable, HttpException, NotFoundException, Logger, HttpStatus } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource, DeepPartial } from 'typeorm';
 import axios from 'axios';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import { CreateAnimalDto } from './dto/create-animal.dto';
 import { UpdateAnimalDto } from './dto/update-animal.dto';
-import { ExternalAnimalDto } from './dto/external-integration.dto'; 
 import { Animal } from '../../../../libs/data/src/entities/animal.entity';
 import { Media } from '../../../../libs/data/src/entities/media.entity'; 
 import { PhotoType } from '../../../../libs/data/src/enums/dental-evaluation.enums'; 
@@ -14,7 +13,6 @@ import { PhotoType } from '../../../../libs/data/src/enums/dental-evaluation.enu
 export class AnimalService {
   private readonly logger = new Logger(AnimalService.name);
   private s3Client: S3Client;
-  // Nome do bucket fixo ou via variável de ambiente (recomendado .env)
   private readonly bucketName = process.env.AWS_S3_BUCKET_NAME || 'animaltools-media';
 
   constructor(
@@ -26,7 +24,6 @@ export class AnimalService {
 
     private dataSource: DataSource,
   ) {
-    // Inicializa o S3 (assumindo que as credenciais estão no .env)
     this.s3Client = new S3Client({
       region: process.env.AWS_REGION || 'us-east-1',
       credentials: {
@@ -36,13 +33,132 @@ export class AnimalService {
     });
   }
 
-// --- NOVO: SINCRONIZAÇÃO COM API EXTERNA (PULL) ---
-  async syncFromExternalApi() {
-    const dtInit = '2026-01-01';
-    const dtEnd = '2026-01-30'; 
+  // --- NOVO: PROCESSAR WEBHOOK (COM MAPEAMENTO PT-BR) ---
+  async processWebhook(data: any) {
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+        // 1. Mapeamento Manual (JSON Português -> Entidade Inglês)
+        const mappedData: DeepPartial<Animal> = {
+            tagCode: data['n°_do_Animal'], // Campo Obrigatório
+            chip: data['chip'],
+            sisbovNumber: data['n°_do_SISBOV'],
+            
+            // IDs Externos e Nomes
+            externalCategoryId: data['categoria_id'],
+            category: data['nome_categoria_id'],
+            
+            externalBreedId: data['raca_id'],
+            breed: data['nome_raca_id'], 
+            
+            externalCoatId: data['pelagem_id'],
+            coatColor: data['nome_pelagem_id'],
+            
+            currentWeight: data['peso_atual'],
+            bodyScore: data['score'],
+            
+            externalCostCenterId: data['centro_de_custo_id'],
+            farm: data['nome_centro_de_custo_id'],
+            
+            externalStockLocationId: data['local_de_estoque_id'],
+            location: data['nome_local_de_estoque_id'],
+            
+            externalLotId: data['lote_id'],
+            lot: data['nome_lote_id'],
+            
+            // Datas
+            birthDate: data['data_de_nascimento'] ? new Date(data['data_de_nascimento']) : undefined,
+            status: data['status'] || 'Ativo',
+            collectionDate: new Date(), // Data que entrou no sistema
+        };
+
+        // 2. Verifica se existe pelo Brinco
+        let animal = await queryRunner.manager.findOne(Animal, { 
+            where: { tagCode: mappedData.tagCode } 
+        });
+
+        if (animal) {
+            // Atualiza
+            Object.assign(animal, mappedData);
+        } else {
+            // Cria
+            animal = queryRunner.manager.create(Animal, mappedData);
+        }
+
+        const savedAnimal = await queryRunner.manager.save(animal);
+
+        // 3. Processar Fotos do JSON (se houver)
+        if (data.fotos && Array.isArray(data.fotos)) {
+            for (const [index, foto] of data.fotos.entries()) {
+                const link = foto['link_do_driver'];
+                
+                // Evita duplicatas checando se a URL já existe para este animal
+                const existingMedia = await this.mediaRepository.findOne({ 
+                    where: { s3UrlPath: link, animal: { id: savedAnimal.id } } 
+                });
+
+                if (!existingMedia) {
+                    // Tenta subir pro S3 se for link do Drive, senão salva o link direto
+                    let finalUrl = link;
+                    if (link.includes('drive.google.com')) {
+                        try {
+                             // Reutiliza sua lógica de upload S3 se possível, ou salva o link original
+                             // Para simplificar no webhook síncrono, salvamos o link. 
+                             // Se quiser upload assíncrono, chamaríamos processDriveImageToS3 aqui.
+                             // finalUrl = await this.processDriveImageToS3(link, savedAnimal.tagCode, index);
+                        } catch (e) {
+                            this.logger.warn(`Erro upload S3 webhook: ${e.message}`);
+                        }
+                    }
+
+                    const newMedia = this.mediaRepository.create({
+                        animal: savedAnimal,
+                        s3UrlPath: finalUrl,
+                        originalDriveUrl: link,
+                        latitude: foto['latitude_latitude'],
+                        longitude: foto['latitude_longitude'],
+                        photoType: index === 0 ? PhotoType.FRONTAL : PhotoType.LATERAL_LEFT,
+                    });
+                    
+                    await queryRunner.manager.save(newMedia);
+                }
+            }
+        }
+
+        await queryRunner.commitTransaction();
+
+        return { 
+            message: animal ? 'Animal atualizado via integração.' : 'Animal criado via integração.',
+            id: savedAnimal.id,
+            tag: savedAnimal.tagCode
+        };
+
+    } catch (err) {
+        await queryRunner.rollbackTransaction();
+        this.logger.error(`Erro no Webhook: ${err.message}`);
+        throw new HttpException('Erro ao processar dados externos', HttpStatus.BAD_REQUEST);
+    } finally {
+        await queryRunner.release();
+    }
+  }
+
+  // --- SINCRONIZAÇÃO PULL  ---
+  async syncFromExternalApi(start?: string, end?: string) {
+    // Se não informar data, pega os últimos 7 dias automaticamente
+    const today = new Date();
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(today.getDate() - 7);
+
+    const formatDate = (date: Date) => date.toISOString().split('T')[0];
+
+    const dtInit = start || formatDate(sevenDaysAgo);
+    const dtEnd = end || formatDate(today);
+    
     const url = `https://apicatwork.gerenteboviplan.com.br/animals_in?client=animaltools&dt_init=${dtInit}&dt_end=${dtEnd}`;
 
-    console.log(`🔄 Iniciando sincronização: ${url}`);
+    this.logger.log(`🔄 Iniciando sincronização: ${url}`);
 
     try {
       const response = await axios.get(url);
@@ -55,239 +171,40 @@ export class AnimalService {
       let count = 0;
 
       for (const item of externalAnimals) {
-        const tagCode = item['n°_do_Animal']; 
-        let animal = await this.animalRepository.findOne({ where: { tagCode } });
-
-        const animalPayload: DeepPartial<Animal> = {
-          tagCode: tagCode,
-          breed: item['nome_raca_id'] || 'Indefinida',
-          chip: item['chip'],
-          sisbovNumber: item['n°_do_SISBOV'],
-          age: 24, 
-          birthDate: item['data_de_nascimento'] ? new Date(item['data_de_nascimento']) : null,
-          currentWeight: item['peso_atual'], 
-          farm: item['nome_centro_de_custo_id'],
-          client: 'Gerente Boviplan', 
-          lot: item['nome_lote_id'],
-          location: item['nome_local_de_estoque_id'],
-          collectionDate: item['data_de_entrada_criado'] ? new Date(item['data_de_entrada_criado']) : new Date(),
-        };
-
-        if (animal) {
-          await this.animalRepository.update(animal.id, animalPayload);
-        } else {
-          animal = this.animalRepository.create(animalPayload);
-          await this.animalRepository.save(animal);
-        }
-        
-        // 4. Salvar Fotos
-        if (item['fotos'] && Array.isArray(item['fotos'])) {
-            // Buscamos o animal recém salvo/atualizado
-            const savedAnimal = await this.animalRepository.findOne({ where: { tagCode } });
-            
-            // CORREÇÃO AQUI: Verificamos se ele existe antes de usar
-            if (savedAnimal) { 
-                for (const foto of item['fotos']) {
-                    const link = foto['link_do_driver'];
-                    
-                    const existingMedia = await this.mediaRepository.findOne({ 
-                        where: { s3UrlPath: link, animal: { id: savedAnimal.id } } 
-                    });
-
-                    if (!existingMedia) {
-                        await this.mediaRepository.save({
-                            animal: savedAnimal, // Agora o TS sabe que não é null
-                            s3UrlPath: link,
-                            photoType: PhotoType.FRONTAL,
-                            originalName: `Foto Externa ${foto['foto_id']}`
-                        });
-                    }
-                }
-            } else {
-                console.warn(`Aviso: Animal ${tagCode} não encontrado após processamento. Fotos ignoradas.`);
-            }
-        }
-
+        await this.processWebhook(item);
         count++;
       }
 
-      return { message: `✅ Sincronização concluída! ${count} animais processados.` };
+      return { 
+          message: `✅ Sincronização concluída!`,
+          period: `${dtInit} a ${dtEnd}`,
+          processed: count
+      };
 
     } catch (error) {
-        // TRATAMENTO ESPECIAL PARA O CASO "SEM DADOS"
         if (axios.isAxiosError(error) && error.response) {
-            // Se for 404, assumimos que é "Nenhum registro encontrado"
             if (error.response.status === 404) {
-                console.warn('⚠️ API Externa retornou 404 (Provavelmente sem dados para o período).');
-                return { message: 'Nenhum animal encontrado no período informado (API retornou 404).' };
+                return { 
+                    message: 'Nenhum animal encontrado ou alterado neste período.',
+                    period: `${dtInit} a ${dtEnd}`
+                };
             }
         }
-
-        const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
-        console.error('❌ Erro na sincronização:', errorMessage);
-        
-        throw new HttpException(
-            `Falha na API Externa: ${errorMessage}`, 
-            HttpStatus.BAD_GATEWAY
-        );
+        throw new HttpException(`Falha na API Externa: ${error.message}`, HttpStatus.BAD_GATEWAY);
     }
   }
 
+  // --- MÉTODOS CRUD PADRÃO ---
 
-  
-  // 1. CREATE 
   create(createAnimalDto: CreateAnimalDto) {
     const animal = this.animalRepository.create(createAnimalDto);
     return this.animalRepository.save(animal);
   }
 
-  // --- IMPORTAÇÃO EXTERNA COMPLETA ---
-  async createFromExternal(data: ExternalAnimalDto) {
-    const queryRunner = this.dataSource.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
-
-    try {
-      // A. Combinar Data + Hora de entrada
-      let fullEntryDate: Date | null = null;
-      if (data.entryDateRaw) {
-        const timeString = data.entryTimeRaw || '00:00:00';
-        fullEntryDate = new Date(`${data.entryDateRaw}T${timeString}`);
-      }
-
-      // Combinar Data + Hora de modificação externa
-      let fullModificationDate: Date | null = null;
-      if (data.modificationDateRaw) {
-        const timeString = data.modificationTimeRaw || '00:00:00';
-        fullModificationDate = new Date(`${data.modificationDateRaw}T${timeString}`);
-      }
-
-      // B. Calcular Idade em Meses
-      let calculatedAge: number | null = null;
-      if (data.birthDate) {
-        const birth = new Date(data.birthDate);
-        const today = new Date();
-        calculatedAge = (today.getFullYear() - birth.getFullYear()) * 12 + (today.getMonth() - birth.getMonth());
-      }
-
-      // C. Criar Entidade com TODOS os campos
-      const newAnimal = this.animalRepository.create({
-        tagCode: data.tagCode,
-        chip: data.chip || null, 
-        sisbovNumber: data.sisbov || null,
-        
-        // Dados Genéricos
-        birthDate: data.birthDate ? new Date(data.birthDate) : null,
-        currentWeight: data.weight || null,
-        breed: data.breedName || null,
-        farm: data.farmName || null,
-        lot: data.lotName || null,
-        location: data.locationName || null,
-        collectionDate: new Date(),
-        age: calculatedAge,
-
-        // Novos Campos Específicos
-        bodyScore: data.score || null,
-        coatColor: data.coatName || null,
-        category: data.categoryName || null,
-        status: data.status || 'Ativo',
-        entryDate: fullEntryDate,
-
-        // IDs Externos 
-        externalCategoryId: data.categoryId || null,
-        externalBreedId: data.breedId || null,
-        externalCoatId: data.coatId || null,
-
-        // IDs de Controle e Sincronização
-        externalCostCenterId: data.costCenterId || null,
-        externalStockLocationId: data.stockLocationId || null,
-        externalLotId: data.lotId || null,
-        externalModificationDate: fullModificationDate,
-      });
-
-      const savedAnimal = await queryRunner.manager.save(newAnimal);
-
-      // D. Processar Fotos (Drive -> Download -> S3 -> Banco)
-      if (data.photos && data.photos.length > 0) {
-        for (const [index, p] of data.photos.entries()) {
-           let s3Url = '';
-
-           try {
-             // Tenta fazer o processo completo se for link do Drive
-             if (p.driveLink && p.driveLink.includes('drive.google.com')) {
-                this.logger.log(`Processando imagem ${index + 1} do animal ${savedAnimal.tagCode}...`);
-                s3Url = await this.processDriveImageToS3(p.driveLink, savedAnimal.tagCode, index);
-             }
-           } catch (error) {
-             this.logger.error(`Falha ao processar imagem do Drive: ${error.message}`);
-             // Se falhar, segue a vida sem URL do S3, mas salva o original
-           }
-
-           const media = this.mediaRepository.create({
-             animal: savedAnimal,
-             originalDriveUrl: p.driveLink,
-             s3UrlPath: s3Url, // Aqui entra o link final da AWS
-             latitude: p.latitude ?? null,
-             longitude: p.longitude ?? null,
-             
-             photoType: index === 0 ? PhotoType.FRONTAL : PhotoType.LATERAL_LEFT,
-           });
-           
-           await queryRunner.manager.save(media);
-        }
-      }
-      
-      await queryRunner.commitTransaction();
-      return this.findOne(savedAnimal.id); 
-
-    } catch (err) {
-      await queryRunner.rollbackTransaction();
-      throw err;
-    } finally {
-      await queryRunner.release();
-    }
-  }
-
-  // --- MÉTODOS AUXILIARES ---
-
-  // Lógica para baixar do Drive e subir pro S3
-  private async processDriveImageToS3(driveLink: string, animalCode: string, index: number): Promise<string> {
-      // 1. Extrair ID do arquivo do link
-      const fileIdMatch = driveLink.match(/\/d\/([a-zA-Z0-9_-]+)/);
-      if (!fileIdMatch) return '';
-      
-      const fileId = fileIdMatch[1];
-      const downloadUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
-
-      // 2. Baixar a imagem
-      const response = await axios({
-          url: downloadUrl,
-          method: 'GET',
-          responseType: 'arraybuffer' 
-      });
-
-      // 3. Definir nome único
-      const fileName = `integrations/${animalCode}-${Date.now()}-${index}.jpg`;
-
-      // 4. Upload para o S3
-      await this.s3Client.send(new PutObjectCommand({
-          Bucket: this.bucketName,
-          Key: fileName,
-          Body: response.data,
-          ContentType: 'image/jpeg',
-          ACL: 'public-read' // Verifique se o bucket permite ACLs públicas
-      }));
-
-      // 5. Retornar URL pública
-      return `https://${this.bucketName}.s3.amazonaws.com/${fileName}`;
-  }
-
-  // 2. FIND ALL
   findAll() {
     return this.animalRepository.find();
   }
 
-  // 3. FIND ONE 
   async findOne(id: number) {
     const animal = await this.animalRepository.findOne({
       where: { id },
@@ -304,13 +221,10 @@ export class AnimalService {
       : undefined;
 
     return {
-      // Retorna todos os dados, inclusive os novos se quiser exibir
       ...animal,
-      id: animal.id.toString(), // Garante string p/ frontend se necessário
+      id: animal.id.toString(),
       code: animal.tagCode, 
-      
       coordinates: coordinates,
-
       media: animal.mediaFiles?.map(m => ({
          s3UrlPath: m.s3UrlPath,
          originalDriveUrl: m.originalDriveUrl
@@ -318,21 +232,17 @@ export class AnimalService {
     };
   }
 
-  // 4. UPDATE
   async update(id: number, updateAnimalDto: UpdateAnimalDto) {
     await this.findOne(id); 
     await this.animalRepository.update(id, updateAnimalDto);
     return this.findOne(id);
   }
 
-  // 5. REMOVE
   async remove(id: number) {
     const animalEntity = await this.animalRepository.findOneBy({ id });
-
     if (!animalEntity) {
         throw new NotFoundException(`Animal #${id} não encontrado.`);
     }
-
     return this.animalRepository.remove(animalEntity);
   }
 
@@ -350,15 +260,39 @@ export class AnimalService {
   async findUniqueClients() {
     const queryBuilder = this.animalRepository.createQueryBuilder('animal');
     const clients = await queryBuilder
-      .select('DISTINCT animal.client', 'client') // Busca clientes distintos
-      .where('animal.client IS NOT NULL')         // Ignora nulos
-      .andWhere("animal.client != ''")            // Ignora strings vazias
+      .select('DISTINCT animal.client', 'client')
+      .where('animal.client IS NOT NULL')
+      .andWhere("animal.client != ''")
       .orderBy('animal.client', 'ASC')
       .getRawMany();
 
     return clients.map(c => c.client);
   }
 
-  
-  
+  // --- S3 HELPER (MANTIDO) ---
+  private async processDriveImageToS3(driveLink: string, animalCode: string, index: number): Promise<string> {
+      const fileIdMatch = driveLink.match(/\/d\/([a-zA-Z0-9_-]+)/);
+      if (!fileIdMatch) return '';
+      
+      const fileId = fileIdMatch[1];
+      const downloadUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
+
+      const response = await axios({
+          url: downloadUrl,
+          method: 'GET',
+          responseType: 'arraybuffer' 
+      });
+
+      const fileName = `integrations/${animalCode}-${Date.now()}-${index}.jpg`;
+
+      await this.s3Client.send(new PutObjectCommand({
+          Bucket: this.bucketName,
+          Key: fileName,
+          Body: response.data,
+          ContentType: 'image/jpeg',
+          ACL: 'public-read' 
+      }));
+
+      return `https://${this.bucketName}.s3.amazonaws.com/${fileName}`;
+  }
 }

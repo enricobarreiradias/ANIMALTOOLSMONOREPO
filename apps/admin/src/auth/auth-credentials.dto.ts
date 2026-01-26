@@ -1,7 +1,6 @@
-import { IsString, MaxLength, MinLength, IsEmail } from 'class-validator';
+import { IsString, MaxLength, MinLength, IsEmail, IsOptional } from 'class-validator';
 
 export class AuthCredentialsDto {
-  // Troca de @IsString() username para:
   @IsEmail({}, { message: 'O email deve ser válido' })
   email: string;
 
@@ -9,4 +8,8 @@ export class AuthCredentialsDto {
   @MinLength(3)
   @MaxLength(20)
   password: string;
+
+  @IsOptional()
+  @IsString()
+  fullName?: string;
 }

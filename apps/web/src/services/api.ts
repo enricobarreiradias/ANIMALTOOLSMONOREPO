@@ -4,9 +4,8 @@ export const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3333/api',
 });
 
-// --- NOVO: INTERCEPTOR DE REQUISIÇÃO (Coloca o Token) ---
+// Interceptor de Requisição (Anexa o Token)
 api.interceptors.request.use((config) => {
-  // Verifica se estamos no navegador antes de tentar acessar o localStorage
   if (typeof window !== 'undefined') {
     const token = localStorage.getItem('token');
     if (token) {
@@ -18,13 +17,11 @@ api.interceptors.request.use((config) => {
   return Promise.reject(error);
 });
 
-// --- NOVO: INTERCEPTOR DE RESPOSTA (Trata Erro 401) ---
+// Interceptor de Resposta (Trata Logouts forçados)
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Verifica se a URL original não é a de login
     const isLoginRequest = error.config?.url?.includes('/auth/signin');
-
     if (error.response && error.response.status === 401 && !isLoginRequest) {
       if (typeof window !== 'undefined') {
         localStorage.removeItem('token');
@@ -39,12 +36,22 @@ interface CreateData {
   [key: string]: unknown;
 }
 
-// --- NOVO: AUTH SERVICE ---
+// --- AUTH SERVICE (ATUALIZADO) ---
 export const AuthService = {
   login: (data: { email: string; password: string }) => api.post('/auth/signin', data),
-  // Função útil para pegar os dados do user (opcional)
+  
   me: () => api.get('/auth/test'),
+
+  getAllUsers: () => api.get('/auth/users'),
+
+  createUser: (data: { email: string; password: string; fullName: string }) => api.post('/auth/signup', data),
+
+  updateUser: (id: number, data: { fullName?: string; email?: string; password?: string; role?: string }) => 
+    api.patch(`/auth/users/${id}`, data),
+
+  removeUser: (id: number) => api.delete(`/auth/users/${id}`),
 };
+
 
 export const AnimalService = {
   getAll: () => api.get('/animal'),
@@ -52,7 +59,6 @@ export const AnimalService = {
   create: (data: CreateData) => api.post('/animal', data),
   getFarms: () => api.get<string[]>('/animal/filters/farms'),
   getClients: () => api.get<string[]>('/animal/filters/clients'),
-
   sync: () => api.get('/animal/integration/sync'),
 };
 
@@ -86,5 +92,4 @@ export const EvaluationService = {
 
     return api.get(`/evaluations/reports/stats?${params.toString()}`);
   },
-
 };
