@@ -1,14 +1,15 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, Logger } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { Strategy, ExtractJwt } from 'passport-jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-// CORREÇÃO: Aponta para a tua entidade local
-import { User } from '../../../../libs/data/src/entities/user.entity';
+import { User } from '../../../../libs/data/src/entities/user.entity'; //
 import { JwtPayload } from './jwt-payload.interface';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
+  private readonly logger = new Logger(JwtStrategy.name);
+
   constructor(
     @InjectRepository(User)
     private userRepository: Repository<User>,
@@ -16,21 +17,22 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      // CORREÇÃO: A chave deve ser IGUAL à que definimos no AuthModule acima
-      secretOrKey: process.env.JWT_SECRET || 'chave-secreta-temporaria-123',
+      secretOrKey: process.env.JWT_SECRET || 'fallback_apenas_para_validacao',
     });
+
+    if (!process.env.JWT_SECRET) {
+      this.logger.error('CRÍTICO: JWT_SECRET não está definido nas variáveis de ambiente!');
+      throw new Error('JWT_SECRET is crucial for security. Please set it in .env file.');
+    }
   }
 
   async validate(payload: JwtPayload): Promise<User> {
-    // O payload agora traz o email (definimos isso no passo anterior)
     const { email } = payload;
-    
     const user = await this.userRepository.findOne({ where: { email } });
 
     if (!user) {
       throw new UnauthorizedException();
     }
-
     return user;
   }
 }

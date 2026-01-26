@@ -18,6 +18,7 @@ export class AuditLog {
   @Column({ type: 'text', nullable: true })
   details: string; // Detalhes extras (ex: "Mudou o cargo para Admin")
 
+
   // Relacionamento com o usuário que fez a ação
   @ManyToOne(() => User, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'user_id' })

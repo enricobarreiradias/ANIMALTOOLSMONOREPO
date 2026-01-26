@@ -1,7 +1,10 @@
-import { Body, Controller, Post, Get, Patch, Delete, UseGuards, Req, ForbiddenException, Param, ParseIntPipe } from '@nestjs/common';
+import { Body, Controller, Post, Get, Patch, Delete, UseGuards, Param, ParseIntPipe, Req } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { AuthService } from './auth.service';
 import { AuthCredentialsDto } from './auth-credentials.dto';
+import { Roles } from './decorators/roles.decorator';
+import { RolesGuard } from './guards/roles.guard';
+import { UserRole } from '../../../../libs/data/src/enums/user-role.enum';
 
 @Controller('auth')
 export class AuthController {
@@ -18,44 +21,34 @@ export class AuthController {
   }
 
   @Get('/users')
-  @UseGuards(AuthGuard('jwt'))
-  async findAll(@Req() req: any) {
-    if (req.user.role !== 'admin') {
-        throw new ForbiddenException('Apenas administradores podem ver a lista de usuários.');
-    }
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles(UserRole.ADMIN)
+  async findAll() {
     return this.authService.findAll();
   }
 
-  // --- ATUALIZAR USUÁRIO ---
   @Patch('/users/:id')
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles(UserRole.ADMIN) 
   async update(
       @Param('id', ParseIntPipe) id: number,
       @Body() body: any,
-      @Req() req: any
   ) {
-      if (req.user.role !== 'admin') {
-          throw new ForbiddenException('Apenas administradores podem editar usuários.');
-      }
       return this.authService.update(id, body);
   }
 
-  // --- REMOVER USUÁRIO ---
   @Delete('/users/:id')
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles(UserRole.ADMIN) 
   async remove(
-      @Param('id', ParseIntPipe) id: number,
-      @Req() req: any
+      @Param('id', ParseIntPipe) id: number
   ) {
-      if (req.user.role !== 'admin') {
-          throw new ForbiddenException('Apenas administradores podem remover usuários.');
-      }
       return this.authService.remove(id);
   }
 
   @Get('/test')
   @UseGuards(AuthGuard('jwt'))
-  test(@Req() req) {
+  test(@Req() req: any) {
     return { user: req.user };
   }
 }
