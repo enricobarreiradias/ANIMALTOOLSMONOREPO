@@ -7,7 +7,7 @@ import {
   Button, Stack, Dialog, DialogTitle, DialogContent, DialogActions, TextField,
   IconButton, Tooltip, MenuItem, FormControl, InputLabel, Select, SelectChangeEvent
 } from '@mui/material';
-import { Security, Badge, Add, Edit, Delete } from '@mui/icons-material';
+import { Security, Badge, Add, Edit, Delete, Block } from '@mui/icons-material'; // <--- ADICIONEI O 'Block'
 import { AxiosError } from 'axios'; 
 import { AuthService } from '../../services/api';
 
@@ -19,27 +19,41 @@ interface User {
   registrationDate: string;
 }
 
+// Interface para o usuário logado (pequeno ajuste)
+interface CurrentUser {
+    id: number;
+    email: string;
+    role: string;
+}
+
 export default function UsersPage() {
-  // --- ESTADOS DA LISTA ---
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // --- ESTADOS DO MODAL (Criação/Edição) ---
+  // --- NOVO: Estado para saber quem está logado ---
+  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
+
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [editingId, setEditingId] = useState<number | null>(null); // Se null = Criando, Se número = Editando
+  const [editingId, setEditingId] = useState<number | null>(null);
   
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
     password: '',
-    role: 'user' // Padrão
+    role: 'user'
   });
 
-  // Carregar usuários
   const fetchUsers = useCallback(() => {
     setLoading(true);
+    
+    // 1. Buscamos quem sou eu (para saber qual ID bloquear)
+    AuthService.me().then(res => {
+        setCurrentUser(res.data.user); // Ajuste conforme o retorno do seu /me
+    }).catch(console.error);
+
+    // 2. Buscamos a lista
     AuthService.getAllUsers()
       .then((response: { data: User[] }) => {
           setUsers(response.data);
@@ -56,19 +70,18 @@ export default function UsersPage() {
     fetchUsers();
   }, [fetchUsers]);
 
-  // --- ABRIR MODAL ---
   const handleOpenCreate = () => {
-    setEditingId(null); // Modo Criação
+    setEditingId(null);
     setFormData({ fullName: '', email: '', password: '', role: 'user' });
     setOpen(true);
   };
 
   const handleOpenEdit = (user: User) => {
-    setEditingId(user.id); // Modo Edição
+    setEditingId(user.id);
     setFormData({
         fullName: user.fullName,
         email: user.email,
-        password: '', // Senha começa vazia na edição (só preenche se quiser mudar)
+        password: '',
         role: user.role
     });
     setOpen(true);
@@ -79,7 +92,6 @@ export default function UsersPage() {
     setFormData({ fullName: '', email: '', password: '', role: 'user' });
   };
 
-  // --- REMOVER USUÁRIO ---
   const handleDelete = async (id: number, name: string) => {
       if (!confirm(`Tem certeza que deseja remover o usuário "${name}"? Essa ação não pode ser desfeita.`)) {
           return;
@@ -91,18 +103,17 @@ export default function UsersPage() {
           fetchUsers();
       } catch (err) {
           console.error(err);
-          alert('Erro ao remover usuário.');
+          const error = err as AxiosError<{ message: string }>;
+          // Feedback melhor para o usuário caso o backend bloqueie
+          alert(error.response?.data?.message || 'Erro ao remover usuário.');
       }
   };
 
-  // --- SALVAR (CRIAR OU EDITAR) ---
   const handleSave = async () => {
-    // Validação
     if (!formData.fullName || !formData.email) {
         alert("Nome e Email são obrigatórios!");
         return;
     }
-    // Na criação, senha é obrigatória. Na edição, é opcional.
     if (!editingId && !formData.password) {
         alert("Defina uma senha provisória.");
         return;
@@ -111,32 +122,24 @@ export default function UsersPage() {
     setSaving(true);
     try {
         if (editingId) {
-            // MODO EDIÇÃO
-            // CORREÇÃO AQUI: Tipagem explícita em vez de 'any'
             const payload: { fullName: string; email: string; role: string; password?: string } = { 
                 fullName: formData.fullName, 
                 email: formData.email, 
                 role: formData.role 
             };
-            
-            // Só envia a senha se ela foi digitada
             if (formData.password) {
                 payload.password = formData.password;
             }
-            
             await AuthService.updateUser(editingId, payload);
             alert("Usuário atualizado com sucesso!");
         } else {
-            // MODO CRIAÇÃO
             await AuthService.createUser({
                 fullName: formData.fullName,
                 email: formData.email,
                 password: formData.password
-                // Role sempre nasce como 'user' na criação simples, depois pode editar
             });
             alert("Usuário criado com sucesso!");
         }
-        
         handleClose();
         fetchUsers(); 
     } catch (err) { 
@@ -150,7 +153,6 @@ export default function UsersPage() {
 
   return (
     <Box sx={{ p: 4 }}>
-      
       <Stack direction="row" justifyContent="space-between" alignItems="center" mb={4}>
         <Box>
             <Typography variant="h4" fontWeight={800} color="primary">
@@ -187,14 +189,27 @@ export default function UsersPage() {
               </TableRow>
             </TableHead>
             <TableBody>
-              {users.map((user) => (
+              {users.map((user) => {
+                // --- LÓGICA DE PROTEÇÃO VISUAL ---
+                const isCurrentUser = currentUser?.id === user.id;
+                const isSuperAdmin = user.id === 1; // ID 1 é sagrado
+                const canDelete = !isSuperAdmin && !isCurrentUser;
+                // ---------------------------------
+
+                return (
                 <TableRow key={user.id} hover>
                   <TableCell>
                     <Box display="flex" alignItems="center" gap={2}>
                       <Avatar sx={{ bgcolor: user.role === 'admin' ? 'primary.main' : 'secondary.main' }}>
                         {user.fullName ? user.fullName.charAt(0).toUpperCase() : '?'}
                       </Avatar>
-                      <Typography fontWeight="bold">{user.fullName}</Typography>
+                      <Box>
+                        <Typography fontWeight="bold">
+                            {user.fullName}
+                            {/* ETIQUETA (VOCÊ) */}
+                            {isCurrentUser && <span style={{fontSize: '0.8em', color: '#666', marginLeft: 6}}>(Você)</span>}
+                        </Typography>
+                      </Box>
                     </Box>
                   </TableCell>
                   <TableCell>{user.email}</TableCell>
@@ -215,23 +230,38 @@ export default function UsersPage() {
                                   <Edit fontSize="small" />
                               </IconButton>
                           </Tooltip>
-                          <Tooltip title="Remover Acesso">
-                              <IconButton size="small" color="error" onClick={() => handleDelete(user.id, user.fullName)}>
-                                  <Delete fontSize="small" />
-                              </IconButton>
-                          </Tooltip>
+                          
+                          {/* PROTEÇÃO NO BOTÃO DE EXCLUIR */}
+                          {canDelete ? (
+                            <Tooltip title="Remover Acesso">
+                                <IconButton size="small" color="error" onClick={() => handleDelete(user.id, user.fullName)}>
+                                    <Delete fontSize="small" />
+                                </IconButton>
+                            </Tooltip>
+                          ) : (
+                            <Tooltip title={isSuperAdmin ? "Sistema Principal (Protegido)" : "Você não pode se excluir"}>
+                                <span>
+                                    <IconButton size="small" disabled>
+                                        <Block fontSize="small" color="disabled" />
+                                    </IconButton>
+                                </span>
+                            </Tooltip>
+                          )}
+
                       </Stack>
                   </TableCell>
                 </TableRow>
-              ))}
+              )})}
             </TableBody>
           </Table>
         )}
       </TableContainer>
 
-      {/* MODAL HÍBRIDO (Criação e Edição) */}
+      {/* Modal permanece igual... */}
       <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
-        <DialogTitle sx={{ fontWeight: 'bold' }}>
+         {/* ... (código do modal que você já tem) ... */}
+         {/* Apenas copie o restante do modal igual estava no seu arquivo original */}
+         <DialogTitle sx={{ fontWeight: 'bold' }}>
             {editingId ? "Editar Usuário" : "Cadastrar Novo Membro"}
         </DialogTitle>
         <DialogContent>
@@ -249,7 +279,7 @@ export default function UsersPage() {
                     onChange={(e) => setFormData({...formData, email: e.target.value})}
                 />
                 
-                {/* SELETOR DE FUNÇÃO (Aparece só na Edição) */}
+                {/* SELETOR DE FUNÇÃO (Proteção extra: não deixar rebaixar o Super Admin na edição) */}
                 {editingId && (
                     <FormControl fullWidth>
                         <InputLabel>Função no Sistema</InputLabel>
@@ -257,10 +287,13 @@ export default function UsersPage() {
                             value={formData.role}
                             label="Função no Sistema"
                             onChange={(e: SelectChangeEvent) => setFormData({...formData, role: e.target.value})}
+                            // Se estiver editando o ID 1, desabilita a troca de cargo
+                            disabled={editingId === 1}
                         >
                             <MenuItem value="user">Veterinário (Padrão)</MenuItem>
                             <MenuItem value="admin">Administrador (Acesso Total)</MenuItem>
                         </Select>
+                        {editingId === 1 && <Typography variant="caption" color="error">O cargo do Admin Principal não pode ser alterado.</Typography>}
                     </FormControl>
                 )}
 

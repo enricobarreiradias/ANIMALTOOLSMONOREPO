@@ -98,7 +98,7 @@ export const DentalReportDoc = ({ data }: ReportProps) => {
 
         {/* DADOS DO ANIMAL */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Identificação do Paciente</Text>
+          <Text style={styles.sectionTitle}>Identificação do Animal</Text>
           
           <View style={{ flexDirection: 'row' }}>
               {/* Coluna 1 */}

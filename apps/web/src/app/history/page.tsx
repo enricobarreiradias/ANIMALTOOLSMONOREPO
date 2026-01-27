@@ -359,10 +359,10 @@ export default function HistoryPage() {
                 >
                     <Box textAlign="left" ml={1}>
                         <Typography variant="subtitle2" fontWeight="bold">
-                            Mini Relatório PDF
+                            Relatório PDF
                         </Typography>
                         <Typography variant="caption" sx={{ opacity: 0.8 }}>
-                            Resumo, fotos e opção de download.
+                            Resumo e opção de download.
                         </Typography>
                     </Box>
                 </Button>
