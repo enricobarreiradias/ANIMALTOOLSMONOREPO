@@ -48,7 +48,7 @@ interface ReportProps {
 const styles = StyleSheet.create({
   page: { padding: 30, fontFamily: 'Helvetica', fontSize: 10, color: '#333' },
   header: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20, borderBottomWidth: 1, borderBottomColor: '#ccc', paddingBottom: 10 },
-  logoConfig: { width: 100, height: 50, objectFit: 'contain' }, 
+  logoConfig: { width: 120, height: 50, objectFit: 'contain' }, 
   titleBlock: { textAlign: 'right' },
   title: { fontSize: 18, fontWeight: 'bold', color: '#1976d2' },
   subtitle: { fontSize: 10, color: '#666' },
@@ -61,9 +61,30 @@ const styles = StyleSheet.create({
   value: { flex: 1 },
 
   teethContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  toothCard: { width: '48%', borderWidth: 1, borderStyle: 'solid', borderColor: '#eee', padding: 5, marginBottom: 5, backgroundColor: '#fafafa' },
-  toothTitle: { fontWeight: 'bold', marginBottom: 4, color: '#d32f2f', borderBottomWidth: 1, borderBottomColor: '#ddd', paddingBottom: 2 },
-  pathologyText: { fontSize: 9, marginBottom: 2 },
+  toothCard: { 
+    width: '48%', 
+    borderWidth: 1.5, 
+    borderStyle: 'solid', 
+    borderColor: '#d32f2f', 
+    borderRadius: 4,
+    padding: 8, 
+    marginBottom: 8, 
+    backgroundColor: '#fff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2
+  },
+  toothTitle: { 
+    fontWeight: 'bold', 
+    marginBottom: 6, 
+    color: '#fff', 
+    backgroundColor: '#d32f2f',
+    padding: 4,
+    borderRadius: 2,
+    fontSize: 10
+  },
+  pathologyText: { fontSize: 9, marginBottom: 2, color: '#333' },
 
   footer: { position: 'absolute', bottom: 30, left: 30, right: 30, textAlign: 'center', fontSize: 8, color: '#aaa', borderTopWidth: 1, borderTopColor: '#eee', paddingTop: 10 }
 });

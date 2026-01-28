@@ -25,8 +25,6 @@ export class AnimalService {
     private mediaRepository: Repository<Media>,
 
     private dataSource: DataSource,
-    
-    // NOVO: Injeção do Serviço de Auditoria
     private auditService: AuditService, 
   ) {
     this.s3Client = new S3Client({
@@ -38,39 +36,68 @@ export class AnimalService {
     });
   }
 
-  // --- NOVO: PROCESSAR WEBHOOK (MANTIDO IGUAL) ---
+  // --- PROCESSAR WEBHOOK (Lógica SISBOV + Correção de Chaves e Datas) ---
   async processWebhook(data: any) {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
     try {
+        const tagCode = data['n_do_Animal'] || data['n°_do_Animal'];
+        const sisbov = data['n_do_SISBOV'] || data['n°_do_SISBOV'];
+
+        // --- CORREÇÃO DE DATA DE ENTRADA ---
+        let entryDate = new Date(); // Fallback: Data atual
+
+        const dateStr = data['data_de_entrada_criado'];
+        const timeStr = data['horario_de_entrada_criado'] || data['horário_de_entrada_criado'] || '00:00:00';
+        
+        if (dateStr) {
+            // Combina Data + Hora para criar um objeto Date válido
+            const fullDateString = `${dateStr}T${timeStr}`;
+            const parsedDate = new Date(fullDateString);
+            
+            if (!isNaN(parsedDate.getTime())) {
+                entryDate = parsedDate;
+            }
+        }
+        // ------------------------------------
+
         const mappedData: DeepPartial<Animal> = {
-            tagCode: data['n°_do_Animal'], 
+            tagCode: tagCode, 
             chip: data['chip'],
-            sisbovNumber: data['n°_do_SISBOV'],
+            sisbovNumber: sisbov,
             externalCategoryId: data['categoria_id'],
             category: data['nome_categoria_id'],
             externalBreedId: data['raca_id'],
             breed: data['nome_raca_id'], 
             externalCoatId: data['pelagem_id'],
             coatColor: data['nome_pelagem_id'],
-            currentWeight: data['peso_atual'],
-            bodyScore: data['score'],
+            currentWeight: data['peso_atual'] ? Number(data['peso_atual']) : 0,
+            bodyScore: data['score'] ? Number(data['score']) : 0,
+            
             externalCostCenterId: data['centro_de_custo_id'],
             farm: data['nome_centro_de_custo_id'],
             externalStockLocationId: data['local_de_estoque_id'],
             location: data['nome_local_de_estoque_id'],
             externalLotId: data['lote_id'],
             lot: data['nome_lote_id'],
+            
             birthDate: data['data_de_nascimento'] ? new Date(data['data_de_nascimento']) : undefined,
             status: data['status'] || 'Ativo',
-            collectionDate: new Date(), 
+            
+            // Aqui usamos a data corrigida vinda do JSON
+            collectionDate: entryDate, 
         };
 
-        let animal = await queryRunner.manager.findOne(Animal, { 
-            where: { tagCode: mappedData.tagCode } 
-        });
+        let animal: Animal | null = null;
+
+        // Upsert via SISBOV
+        if (mappedData.sisbovNumber) {
+            animal = await queryRunner.manager.findOne(Animal, { 
+                where: { sisbovNumber: mappedData.sisbovNumber } 
+            });
+        }
 
         if (animal) {
             Object.assign(animal, mappedData);
@@ -80,8 +107,18 @@ export class AnimalService {
 
         const savedAnimal = await queryRunner.manager.save(animal);
 
-        if (data.fotos && Array.isArray(data.fotos)) {
-            for (const [index, foto] of data.fotos.entries()) {
+        // --- TRATAMENTO DE FOTOS ---
+        let photosArray: any[] = [];
+        if (data.fotos) {
+            if (Array.isArray(data.fotos)) {
+                photosArray = data.fotos;
+            } else if (typeof data.fotos === 'object') {
+                photosArray = Object.values(data.fotos);
+            }
+        }
+
+        if (photosArray.length > 0) {
+            for (const [index, foto] of photosArray.entries()) {
                 const link = foto['link_do_driver'];
                 
                 const existingMedia = await this.mediaRepository.findOne({ 
@@ -92,7 +129,7 @@ export class AnimalService {
                     let finalUrl = link;
                     if (link.includes('drive.google.com')) {
                         try {
-                             // Lógica de upload mantida
+                             // Lógica de upload S3 (se necessário)
                         } catch (e) {
                             this.logger.warn(`Erro upload S3 webhook: ${e.message}`);
                         }
@@ -102,8 +139,9 @@ export class AnimalService {
                         animal: savedAnimal,
                         s3UrlPath: finalUrl,
                         originalDriveUrl: link,
-                        latitude: foto['latitude_latitude'],
-                        longitude: foto['latitude_longitude'],
+                        // Correção para ler latitude/longitude do novo formato JSON
+                        latitude: foto['latitude'] || foto['latitude_latitude'],
+                        longitude: foto['longitude'] || foto['latitude_longitude'],
                         photoType: index === 0 ? PhotoType.FRONTAL : PhotoType.LATERAL_LEFT,
                     });
                     
@@ -115,7 +153,7 @@ export class AnimalService {
         await queryRunner.commitTransaction();
 
         return { 
-            message: animal ? 'Animal atualizado via integração.' : 'Animal criado via integração.',
+            message: animal ? 'Animal atualizado via integração (SISBOV).' : 'Animal criado via integração.',
             id: savedAnimal.id,
             tag: savedAnimal.tagCode
         };
@@ -123,13 +161,14 @@ export class AnimalService {
     } catch (err) {
         await queryRunner.rollbackTransaction();
         this.logger.error(`Erro no Webhook: ${err.message}`);
+        console.error("Payload falhou:", JSON.stringify(data));
         throw new HttpException('Erro ao processar dados externos', HttpStatus.BAD_REQUEST);
     } finally {
         await queryRunner.release();
     }
   }
 
-  // --- SINCRONIZAÇÃO PULL (MANTIDO IGUAL) ---
+  // --- SINCRONIZAÇÃO PULL ---
   async syncFromExternalApi(start?: string, end?: string) {
     const today = new Date();
     const sevenDaysAgo = new Date();
@@ -146,10 +185,13 @@ export class AnimalService {
 
     try {
       const response = await axios.get(url);
-      const externalAnimals = response.data;
+      
+      // Correção: Extrai o array de 'data' se existir
+      const externalAnimals = response.data.data || response.data;
 
       if (!Array.isArray(externalAnimals)) {
-        throw new Error('Formato inválido recebido da API externa');
+        this.logger.error("Formato recebido:", JSON.stringify(response.data));
+        throw new Error('Formato inválido: esperava um array em "data" ou na raiz.');
       }
 
       let count = 0;
@@ -211,12 +253,14 @@ export class AnimalService {
       coordinates: coordinates,
       media: animal.mediaFiles?.map(m => ({
          s3UrlPath: m.s3UrlPath,
-         originalDriveUrl: m.originalDriveUrl
+         originalDriveUrl: m.originalDriveUrl,
+         // IMPORTANTE: Enviar latitude/longitude para o frontend
+         latitude: m.latitude,
+         longitude: m.longitude
       })) || [],
     };
   }
 
-  // --- UPDATE (ATUALIZADO COM AUDIT) ---
   async update(id: number, updateAnimalDto: UpdateAnimalDto, user: User) {
     const animal = await this.animalRepository.findOne({ where: { id } });
     if (!animal) throw new NotFoundException(`Animal com ID ${id} não encontrado.`);
@@ -236,7 +280,6 @@ export class AnimalService {
     return updated;
   }
 
-  // --- REMOVE (ATUALIZADO COM AUDIT) ---
   async remove(id: number, user: User) {
     const animalEntity = await this.animalRepository.findOneBy({ id });
     if (!animalEntity) {
@@ -279,7 +322,7 @@ export class AnimalService {
     return clients.map(c => c.client);
   }
 
-  // --- S3 HELPER (MANTIDO) ---
+  // --- S3 HELPER ---
   private async processDriveImageToS3(driveLink: string, animalCode: string, index: number): Promise<string> {
       const fileIdMatch = driveLink.match(/\/d\/([a-zA-Z0-9_-]+)/);
       if (!fileIdMatch) return '';

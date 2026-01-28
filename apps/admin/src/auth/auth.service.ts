@@ -4,7 +4,8 @@ import {
   ConflictException, 
   InternalServerErrorException, 
   NotFoundException, 
-  ForbiddenException // <--- Importante para bloquear o acesso
+  ForbiddenException,
+  Logger // <--- 1. Adicionar Logger para avisos bonitos no terminal
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -18,15 +19,20 @@ import { AuditService } from '../audit/audit.service';
 
 @Injectable()
 export class AuthService {
-  // Define aqui o email que nunca pode ser apagado/alterado
-  private readonly ADMIN_EMAIL = 'admin@virtualvet.com'; 
+  private readonly logger = new Logger(AuthService.name);
+
+  private readonly ADMIN_EMAIL = process.env.SUPER_ADMIN_EMAIL || null; 
 
   constructor(
     @InjectRepository(User)
     private userRepository: Repository<User>,
     private jwtService: JwtService,
     private auditService: AuditService,
-  ) {}
+  ) {
+    if (!this.ADMIN_EMAIL) {
+        this.logger.warn('⚠️ SEGURANÇA: SUPER_ADMIN_EMAIL não está definido no .env! O administrador principal não está protegido contra remoção.');
+    }
+  }
 
   // --- 1. SIGN UP ---
   async signUp(authCredentialsDto: AuthCredentialsDto): Promise<void> {
@@ -48,7 +54,7 @@ export class AuthService {
       if (error.code === '23505') {
         throw new ConflictException('Este email já está cadastrado.');
       } else {
-        console.error('Erro ao salvar usuário:', error);
+        this.logger.error('Erro ao salvar usuário:', error);
         throw new InternalServerErrorException();
       }
     }
@@ -113,7 +119,8 @@ export class AuthService {
         throw new NotFoundException(`Usuário com ID ${id} não encontrado.`);
     }
 
-    if (user.email === this.ADMIN_EMAIL) {
+    // 4. Verificação segura: só bloqueia se o email estiver configurado E corresponder
+    if (this.ADMIN_EMAIL && user.email === this.ADMIN_EMAIL) {
         throw new ForbiddenException('Não é permitido alterar os dados do Super Administrador Principal.');
     }
 
@@ -147,7 +154,8 @@ export class AuthService {
         throw new NotFoundException(`Usuário com ID ${id} não encontrado.`);
     }
 
-    if (user.email === this.ADMIN_EMAIL) {
+    // 5. Verificação segura aqui também
+    if (this.ADMIN_EMAIL && user.email === this.ADMIN_EMAIL) {
         throw new ForbiddenException('CRÍTICO: Não é permitido remover o Administrador Principal.');
     }
 

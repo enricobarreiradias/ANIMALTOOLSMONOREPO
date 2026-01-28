@@ -65,7 +65,18 @@ export default function HistoryPage() {
 
   const [page, setPage] = useState(0); 
   const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [searchTerm, setSearchTerm] = useState('');
+  
+  // ALTERAÇÃO 1: Inicializa o searchTerm com o valor da URL (se existir)
+  const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
+
+  // ALTERAÇÃO 2: Sincroniza o searchTerm se a URL mudar (Navegação vinda do Relatório)
+  useEffect(() => {
+    const urlSearch = searchParams.get('search');
+    // Atualiza o estado apenas se o parametro search estiver presente ou se mudou
+    if (urlSearch !== null) {
+        setSearchTerm(urlSearch);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     AuthService.me()

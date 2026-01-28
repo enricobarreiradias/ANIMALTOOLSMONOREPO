@@ -507,8 +507,9 @@ export class EvaluationService {
       await this.toothRepository.save(teethEntities);
   }
 
-  // --- 11. RELATÓRIOS ---
+  // --- 11. RELATÓRIOS (ATUALIZADO) ---
   async getReportStats(filterFarm?: string, filterClient?: string, startDate?: string, endDate?: string) {
+    // 1. QUERY BASE (Filtros Comuns)
     const baseQuery = this.evaluationRepository.createQueryBuilder('evaluation')
         .leftJoin('evaluation.animal', 'animal')
         .leftJoin('evaluation.teeth', 'tooth');
@@ -522,38 +523,53 @@ export class EvaluationService {
         baseQuery.andWhere('evaluation.evaluationDate BETWEEN :start AND :end', { start, end });
     }
 
+    // 2. DADOS PARA CLASSIFICAÇÃO (Healthy / Moderate / Critical)
     const classificationQuery = baseQuery.clone();
     const evaluationsData = await classificationQuery
         .select([
             'evaluation.id',
-            'MAX(tooth.fracture_level) as max_fracture', 'MAX(tooth.pulpitis) as max_pulpitis',
-            'MAX(tooth.gingival_recession_level) as max_recession', 'MAX(tooth.crown_reduction_level) as max_crown',
-            'MAX(tooth.dental_calculus) as max_calculus', 'MAX(tooth.periodontal_lesions) as max_periodontal',
-            'MAX(tooth.lingual_wear) as max_lingual', 'MAX(tooth.caries) as max_caries',
-            'MAX(tooth.vitrified_border) as max_vitrified', 'MAX(tooth.pulp_chamber_exposure) as max_exposure',
+            'MAX(tooth.fracture_level) as max_fracture', 
+            'MAX(tooth.pulpitis) as max_pulpitis',
+            'MAX(tooth.gingival_recession_level) as max_recession', 
+            'MAX(tooth.crown_reduction_level) as max_crown',
+            'MAX(tooth.dental_calculus) as max_calculus', 
+            'MAX(tooth.periodontal_lesions) as max_periodontal',
+            'MAX(tooth.lingual_wear) as max_lingual', 
+            'MAX(tooth.caries) as max_caries',
+            'MAX(tooth.vitrified_border) as max_vitrified', 
+            'MAX(tooth.pulp_chamber_exposure) as max_exposure',
             'MAX(tooth.gingivitis_edema) as max_edema'
         ])
         .groupBy('evaluation.id')
         .getRawMany();
 
     let healthy = 0, moderate = 0, critical = 0;
+
     evaluationsData.forEach(ev => {
+        // Converte tudo para número para evitar erros de tipo
         const fracture = Number(ev.max_fracture || 0);
         const pulpitis = Number(ev.max_pulpitis || 0);
         const recession = Number(ev.max_recession || 0);
-        
-        if (fracture === 2 || pulpitis === 2 || recession === 2) {
+        const exposure = Number(ev.max_exposure || 0);     // Adicionado
+        const periodontal = Number(ev.max_periodontal || 0); // Adicionado
+
+        // CRITÉRIO DE CRITICIDADE AJUSTADO:
+        // Adicionei 'exposure' (Exposição de Câmara) e 'periodontal >= 3' como críticos, pois indicam dor ou perda dentária iminente.
+        if (fracture >= 2 || pulpitis >= 2 || recession >= 3 || exposure > 0 || periodontal >= 3) {
             critical++;
         } else {
+            // Verifica se tem QUALQUER outra patologia menor
             const values = [
                 fracture, pulpitis, recession,
-                Number(ev.max_crown || 0), Number(ev.max_calculus || 0), Number(ev.max_periodontal || 0), Number(ev.max_lingual || 0),
-                Number(ev.max_caries || 0), Number(ev.max_vitrified || 0), Number(ev.max_exposure || 0), Number(ev.max_edema || 0)
+                Number(ev.max_crown || 0), Number(ev.max_calculus || 0), periodontal, Number(ev.max_lingual || 0),
+                Number(ev.max_caries || 0), Number(ev.max_vitrified || 0), exposure, Number(ev.max_edema || 0)
             ];
+            // Se tiver qualquer valor >= 1, é Moderado. Se tudo for 0, é Saudável.
             if (values.some(v => v >= 1)) moderate++; else healthy++;
         }
     });
 
+    // 3. ESTATÍSTICAS GERAIS (CONTAGEM POR PATOLOGIA)
     const total = evaluationsData.length;
     const statsQuery = baseQuery.clone();
     
@@ -576,6 +592,59 @@ export class EvaluationService {
     const safeStats = stats || {}; 
     const totalLesions = Object.values(safeStats).reduce((acc: number, val) => acc + Number(val || 0), 0) as number;
 
+    // --- 4. NOVO: TOP 5 ANIMAIS CRÍTICOS ---
+    const criticalAnimalsQuery = this.evaluationRepository.createQueryBuilder('evaluation')
+        .leftJoinAndSelect('evaluation.animal', 'animal')
+        .leftJoinAndSelect('evaluation.teeth', 'tooth')
+        .where('1=1'); 
+
+    // (Os teus filtros de fazenda/cliente/data continuam iguais aqui...)
+    if (filterFarm && filterFarm !== 'all') criticalAnimalsQuery.andWhere('animal.farm ILIKE :farm', { farm: `%${filterFarm}%` });
+    if (filterClient && filterClient !== 'all') criticalAnimalsQuery.andWhere('animal.client ILIKE :client', { client: `%${filterClient}%` });
+    if (startDate && endDate) {
+        const start = new Date(startDate); start.setHours(0, 0, 0, 0);
+        const end = new Date(endDate); end.setHours(23, 59, 59, 999);
+        criticalAnimalsQuery.andWhere('evaluation.evaluationDate BETWEEN :start AND :end', { start, end });
+    }
+
+    // Filtra apenas os que têm problemas graves (Aqui podes usar snake_case porque é uma string SQL bruta)
+    criticalAnimalsQuery.andWhere(
+        '(tooth.fracture_level >= 2 OR tooth.pulpitis >= 2 OR tooth.pulp_chamber_exposure > 0 OR tooth.periodontal_lesions >= 3)'
+    );
+
+    // CORREÇÃO AQUI: Usar CamelCase (nomes das propriedades da Entidade)
+    const topCritical = await criticalAnimalsQuery
+        .orderBy('tooth.fractureLevel', 'DESC')       // Antes: fracture_level (ERRADO)
+        .addOrderBy('tooth.pulpitis', 'DESC')         // Igual
+        .addOrderBy('tooth.pulpChamberExposure', 'DESC') // Antes: pulp_chamber_exposure (ERRADO)
+        .take(5)
+        .getMany();
+
+    // Formata o resultado para o Frontend
+    const criticalList = topCritical.map(ev => {
+        // Encontra o dente com a pior condição para exibir como "Diagnóstico Principal"
+        const badTooth = ev.teeth.find(t => 
+            t.fractureLevel >= 2 || t.pulpitis >= 2 || t.pulpChamberExposure > 0 || t.periodontalLesions >= 3
+        );
+
+        let mainIssue = 'Patologia Diversa';
+        if (badTooth) {
+            if (badTooth.fractureLevel >= 2) mainIssue = `Fratura Grau ${badTooth.fractureLevel} (Dente ${badTooth.toothCode})`;
+            else if (badTooth.pulpitis >= 2) mainIssue = `Pulpite Grau ${badTooth.pulpitis} (Dente ${badTooth.toothCode})`;
+            else if (badTooth.pulpChamberExposure > 0) mainIssue = `Exp. Câmara Pulpar (Dente ${badTooth.toothCode})`;
+            else if (badTooth.periodontalLesions >= 3) mainIssue = `Lesão Periodontal G${badTooth.periodontalLesions}`;
+        }
+
+        return {
+            id: ev.animal.id,
+            tag: ev.animal.tagCode,
+            farm: ev.animal.farm,
+            location: ev.animal.location || 'N/I',
+            diagnosis: mainIssue,
+            date: ev.evaluationDate // ou ev.date dependendo da tua entidade
+        };
+    });
+
     return {
         general: {
             total, healthy, moderate, critical, totalLesions,
@@ -595,7 +664,9 @@ export class EvaluationService {
             vitrificado: { label: 'Bordo Vitrificado', count: Number(safeStats.vitrified_border || 0), key: 'vitrified' },
             exposicao: { label: 'Exp. Câmara Pulpar', count: Number(safeStats.pulp_exposure || 0), key: 'exposure' },
             edema: { label: 'Edema Gengival', count: Number(safeStats.gingivitis_edema || 0), key: 'edema' },
-        }
+        },
+        // CAMPO NOVO
+        criticalAnimals: criticalList
     };
   }
 }

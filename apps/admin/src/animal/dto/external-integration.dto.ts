@@ -36,7 +36,6 @@ export class ExternalAnimalDto {
   @IsOptional()
   sisbov?: string;
 
-  // --- NOVOS CAMPOS MAPEADOS ---
 
   @Expose({ name: 'categoria_id' })
   @IsNumber()

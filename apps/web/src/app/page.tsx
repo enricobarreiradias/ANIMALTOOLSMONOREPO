@@ -35,10 +35,16 @@ export default function LoginPage() {
 
     try {
       const response = await AuthService.login({ email, password });
-      const token = response.data.accessToken;
+      
+      const { accessToken, user } = response.data;
 
-      if (token) {
-        localStorage.setItem("token", token);
+      if (accessToken) {
+        localStorage.setItem("token", accessToken);
+        
+        if (user) {
+            localStorage.setItem("user", JSON.stringify(user));
+        }
+
         router.push("/pending");
       } else {
         setError("Token não recebido. Tente novamente.");
