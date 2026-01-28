@@ -10,15 +10,27 @@ export class ExternalPhotoDto {
   @IsString()
   driveLink: string;
 
-  @Expose({ name: 'latitude_latitude' }) 
+  // Atualizado para aceitar o novo padrão "latitude"
+  @Expose({ name: 'latitude' }) 
   @IsNumber()
   @IsOptional()
   latitude?: number;
 
-  @Expose({ name: 'latitude_longitude' })
+  // Mantendo o antigo como opcional caso a API reverter
+  @Expose({ name: 'latitude_latitude' }) 
+  @IsNumber()
+  @IsOptional()
+  latitudeOld?: number;
+
+  @Expose({ name: 'longitude' })
   @IsNumber()
   @IsOptional()
   longitude?: number;
+
+  @Expose({ name: 'latitude_longitude' })
+  @IsNumber()
+  @IsOptional()
+  longitudeOld?: number;
 }
 
 export class ExternalAnimalDto {

@@ -1,6 +1,7 @@
+// Arquivo: apps/web/src/components/ImageDialog.tsx
 import React from 'react';
-import { Dialog, DialogContent, IconButton, Box, Slide, Button } from '@mui/material';
-import { Close, Map as MapIcon } from '@mui/icons-material';
+import { Dialog, DialogContent, IconButton, Box, Slide, Button, Tooltip } from '@mui/material';
+import { Close, Map as MapIcon, OpenInNew } from '@mui/icons-material';
 import { TransitionProps } from '@mui/material/transitions';
 
 const Transition = React.forwardRef(function Transition(
@@ -15,12 +16,20 @@ interface ImageDialogProps {
   onClose: () => void;
   imageUrl: string | null;
   altText?: string;
-  // Nova prop opcional para receber coordenadas
+  // Coordenadas passadas do componente pai
   coordinates?: { lat: string | number, lng: string | number } | null;
 }
 
 export function ImageDialog({ open, onClose, imageUrl, altText = 'Imagem ampliada', coordinates }: ImageDialogProps) {
   if (!imageUrl) return null;
+
+  // Função para garantir que coordenadas sejam números
+  const hasLocation = coordinates && coordinates.lat && coordinates.lng;
+  
+  // URL oficial do Google Maps para busca por coordenadas
+  const googleMapsUrl = hasLocation 
+    ? `https://www.google.com/maps/search/?api=1&query=${coordinates.lat},${coordinates.lng}`
+    : '#';
 
   return (
     <Dialog
@@ -34,40 +43,40 @@ export function ImageDialog({ open, onClose, imageUrl, altText = 'Imagem ampliad
           bgcolor: 'black',
           overflow: 'hidden',
           borderRadius: 2,
-          position: 'relative'
+          position: 'relative',
+          minWidth: '50vw' // Garante um tamanho mínimo legal
         }
       }}
     >
-      {/* Botão de Fechar */}
-      <Box sx={{ position: 'absolute', top: 8, right: 8, zIndex: 999 }}>
+      {/* Header com Botão Fechar e Título Opcional */}
+      <Box sx={{ position: 'absolute', top: 8, right: 8, zIndex: 999, display: 'flex', gap: 1 }}>
+        
+        {/* Botão de Mapa (Visível no topo se preferir, ou mantemos apenas embaixo) */}
+        {hasLocation && (
+             <Tooltip title="Abrir localização no Google Maps">
+                <IconButton 
+                    component="a"
+                    href={googleMapsUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    sx={{ 
+                        bgcolor: 'rgba(25, 118, 210, 0.8)', 
+                        color: 'white',
+                        '&:hover': { bgcolor: 'rgba(25, 118, 210, 1)' } 
+                    }}
+                >
+                    <MapIcon />
+                </IconButton>
+             </Tooltip>
+        )}
+
         <IconButton onClick={onClose} sx={{ bgcolor: 'rgba(255,255,255,0.2)', '&:hover': { bgcolor: 'rgba(255,255,255,0.4)' } }}>
           <Close sx={{ color: 'white' }} />
         </IconButton>
       </Box>
 
-      {/* Botão do Mapa (Se houver coordenadas) */}
-      {coordinates && (
-        <Box sx={{ position: 'absolute', bottom: 16, left: '50%', transform: 'translateX(-50%)', zIndex: 999 }}>
-            <Button 
-                variant="contained" 
-                color="primary" 
-                size="small"
-                startIcon={<MapIcon />}
-                target="_blank"
-                href={`https://www.google.com/maps/search/?api=1&query=${coordinates.lat},${coordinates.lng}`}
-                sx={{ 
-                    bgcolor: 'rgba(25, 118, 210, 0.9)', 
-                    textTransform: 'none',
-                    fontWeight: 'bold',
-                    boxShadow: 3
-                }}
-            >
-                Ver Localização
-            </Button>
-        </Box>
-      )}
-
-      <DialogContent sx={{ p: 0, display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '200px' }}>
+      {/* Conteúdo da Imagem */}
+      <DialogContent sx={{ p: 0, display: 'flex', justifyContent: 'center', alignItems: 'center', bgcolor: '#000' }}>
         <img 
           src={imageUrl} 
           alt={altText}
@@ -79,6 +88,32 @@ export function ImageDialog({ open, onClose, imageUrl, altText = 'Imagem ampliad
           }} 
         />
       </DialogContent>
+
+      {/* Barra Inferior com Informações de GPS (Opcional, mas muito útil) */}
+      {hasLocation && (
+          <Box sx={{ 
+              position: 'absolute', 
+              bottom: 0, 
+              left: 0, 
+              right: 0, 
+              p: 2, 
+              background: 'linear-gradient(to top, rgba(0,0,0,0.8), transparent)',
+              display: 'flex',
+              justifyContent: 'center'
+          }}>
+            <Button 
+                variant="contained" 
+                color="info" 
+                size="small"
+                startIcon={<OpenInNew />}
+                href={googleMapsUrl}
+                target="_blank"
+                sx={{ borderRadius: 20, textTransform: 'none' }}
+            >
+                Ver local da captura ({coordinates?.lat}, {coordinates?.lng})
+            </Button>
+          </Box>
+      )}
     </Dialog>
   );
 }

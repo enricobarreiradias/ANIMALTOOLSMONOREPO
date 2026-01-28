@@ -10,7 +10,6 @@ import {
   Stack, Alert, Divider, Grid 
 } from '@mui/material';
 import { Search, FilterList, CheckCircle, Pets, ArrowForward, Refresh } from '@mui/icons-material';
-// Importação consolidada
 import { EvaluationService, AnimalService } from '../../services/api';
 
 interface ApiAnimalResponse {
@@ -21,6 +20,7 @@ interface ApiAnimalResponse {
   farm?: string;
   client?: string;
   entryDate?: string;
+  createdAt?: string;
 }
 
 export default function PendingEvaluationsPage() {
@@ -41,7 +41,7 @@ export default function PendingEvaluationsPage() {
   const [filterFarm, setFilterFarm] = useState('all');
   const [filterClient, setFilterClient] = useState('all');
 
-  // Opções para os Selects (Dados Reais)
+  // Opções para os Selects 
   const [farmOptions, setFarmOptions] = useState<string[]>([]);
   const [clientOptions, setClientOptions] = useState<string[]>([]);
 
@@ -237,7 +237,17 @@ export default function PendingEvaluationsPage() {
                                     </TableCell>
                                     <TableCell>
                                         <Typography fontWeight="bold" variant="body1">{row.code}</Typography>
-                                        <Typography variant="caption" color="text.secondary">Entrada: {row.entryDate ? new Date(row.entryDate).toLocaleDateString() : '-'}</Typography>
+                                        <Typography variant="caption" color="text.secondary">
+                                            Entrada: {row.createdAt 
+                                                ? new Date(row.createdAt).toLocaleString('pt-BR', {
+                                                    day: '2-digit',
+                                                    month: '2-digit',
+                                                    year: '2-digit', // Ano curto (26) economiza espaço
+                                                    hour: '2-digit',
+                                                    minute: '2-digit'
+                                                  }) 
+                                                : '-'}
+                                        </Typography>
                                     </TableCell>
                                     <TableCell><Chip label={row.breed || 'N/A'} size="small" variant="outlined" /></TableCell>
                                     <TableCell>{row.farm || 'Não informada'}</TableCell>

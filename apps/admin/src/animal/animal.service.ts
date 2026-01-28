@@ -46,14 +46,12 @@ export class AnimalService {
         const tagCode = data['n_do_Animal'] || data['n°_do_Animal'];
         const sisbov = data['n_do_SISBOV'] || data['n°_do_SISBOV'];
 
-        // --- CORREÇÃO DE DATA DE ENTRADA ---
-        let entryDate = new Date(); // Fallback: Data atual
+        let entryDate = new Date(); 
 
         const dateStr = data['data_de_entrada_criado'];
         const timeStr = data['horario_de_entrada_criado'] || data['horário_de_entrada_criado'] || '00:00:00';
         
         if (dateStr) {
-            // Combina Data + Hora para criar um objeto Date válido
             const fullDateString = `${dateStr}T${timeStr}`;
             const parsedDate = new Date(fullDateString);
             
@@ -86,8 +84,12 @@ export class AnimalService {
             birthDate: data['data_de_nascimento'] ? new Date(data['data_de_nascimento']) : undefined,
             status: data['status'] || 'Ativo',
             
-            // Aqui usamos a data corrigida vinda do JSON
             collectionDate: entryDate, 
+            entryDate: entryDate,
+
+            externalModificationDate: data['data_de_entrada_modificado'] 
+              ? new Date(data['data_de_entrada_modificado']) 
+              : undefined,
         };
 
         let animal: Animal | null = null;
@@ -98,6 +100,17 @@ export class AnimalService {
                 where: { sisbovNumber: mappedData.sisbovNumber } 
             });
         }
+        // Isso evita duplicar animais de teste a cada sincronização. (Upsert via CHIP)
+        if (!animal && mappedData.chip) {
+             animal = await queryRunner.manager.findOne(Animal, { 
+                where: { chip: mappedData.chip } 
+            });
+            
+            if (animal) {
+                this.logger.warn(`Animal encontrado pelo CHIP (${mappedData.chip}) em vez do SISBOV. (Lógica de Teste)`);
+            }
+        }
+        // ----------------------------------------------------
 
         if (animal) {
             Object.assign(animal, mappedData);
@@ -186,7 +199,6 @@ export class AnimalService {
     try {
       const response = await axios.get(url);
       
-      // Correção: Extrai o array de 'data' se existir
       const externalAnimals = response.data.data || response.data;
 
       if (!Array.isArray(externalAnimals)) {

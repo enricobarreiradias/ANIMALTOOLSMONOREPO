@@ -156,7 +156,7 @@ export class EvaluationService {
     }
   }
 
-  // --- 2. PENDENTES ---
+  // --- 2. PENDENTES (CORRIGIDO) ---
   async findPendingEvaluations(
       page: number = 1, limit: number = 20, 
       search?: string, filterFarm?: string, filterClient?: string
@@ -178,10 +178,21 @@ export class EvaluationService {
       
       return {
           data: animals.map(a => ({
-            id: a.id.toString(), code: a.tagCode, breed: a.breed, farm: a.farm, client: a.client,
-            age: a.age, chip: a.chip, sisbov: a.sisbovNumber, currentWeight: a.currentWeight, lot: a.lot,
+            id: a.id.toString(), 
+            code: a.tagCode, 
+            breed: a.breed, 
+            farm: a.farm, 
+            client: a.client,
+            age: a.age, 
+            chip: a.chip, 
+            sisbov: a.sisbovNumber, 
+            currentWeight: a.currentWeight, 
+            lot: a.lot,
             birthDate: a.birthDate ? new Date(a.birthDate).toLocaleDateString('pt-BR') : undefined,
             entryDate: a.collectionDate ? new Date(a.collectionDate).toLocaleDateString('pt-BR') : 'N/A',
+            // --- AQUI ESTAVA FALTANDO ---
+            createdAt: a.createdAt, 
+            // ---------------------------
             media: a.mediaFiles?.map(m => m.s3UrlPath) || []
           })),
           meta: { total, page, limit, lastPage: Math.ceil(total / limit) }
@@ -660,12 +671,11 @@ export class EvaluationService {
             calculo: { label: 'Cálculo Dentário', count: Number(safeStats.calculus || 0), key: 'calculus' },
             periodontal: { label: 'Lesões Periodontais', count: Number(safeStats.periodontal || 0), key: 'periodontal' },
             desgaste: { label: 'Desgaste Lingual', count: Number(safeStats.lingual_wear || 0), key: 'lingual' },
-            carie: { label: 'Cáries', count: Number(safeStats.caries || 0), key: 'caries' },
+            carie: { label: 'Cáries', count: Number(safeStats.caries || 0), key: 'carie' },
             vitrificado: { label: 'Bordo Vitrificado', count: Number(safeStats.vitrified_border || 0), key: 'vitrified' },
             exposicao: { label: 'Exp. Câmara Pulpar', count: Number(safeStats.pulp_exposure || 0), key: 'exposure' },
             edema: { label: 'Edema Gengival', count: Number(safeStats.gingivitis_edema || 0), key: 'edema' },
         },
-        // CAMPO NOVO
         criticalAnimals: criticalList
     };
   }

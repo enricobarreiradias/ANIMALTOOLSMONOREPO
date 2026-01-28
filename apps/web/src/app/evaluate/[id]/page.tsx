@@ -10,7 +10,7 @@ import {
 } from '@mui/material';
 import { 
   Save, ArrowBack, CheckCircle, Warning, LocationOn, 
-  CalendarToday, Pets, Person, OpenInNew, ZoomIn 
+  CalendarToday, Pets, Person, ZoomIn, Map as MapIcon 
 } from '@mui/icons-material';
 import { AnimalService, EvaluationService } from '../../../services/api';
 import DentalArch from '../../../components/DentalArch';
@@ -37,7 +37,9 @@ enum ToothType {
 
 type AnimalMedia = { 
   s3UrlPath: string; 
-  originalDriveUrl?: string; 
+  originalDriveUrl?: string;
+  latitude?: number;
+  longitude?: number; 
 } | string;
 
 interface Animal {
@@ -55,7 +57,7 @@ interface Animal {
   currentWeight?: number;
   lot?: string;
   birthDate?: string;
-  coordinates?: { lat: number; lng: number };
+  coordinates?: { lat: number; lng: number }; // Mantido no tipo, mas não usado na UI global
   category?: string;
   coatColor?: string;
   bodyScore?: number;
@@ -98,8 +100,7 @@ export default function EvaluationPage() {
   const [selectedTooth, setSelectedTooth] = useState<string | null>(null);
   const [generalNotes, setGeneralNotes] = useState('');
   
-  // --- NOVO: Estado para controlar o Zoom ---
-  const [zoomImage, setZoomImage] = useState<string | null>(null); 
+  const [selectedMedia, setSelectedMedia] = useState<AnimalMedia | null>(null);
   
   const [teethData, setTeethData] = useState<Record<string, typeof initialToothState>>({
     [ToothCode.I1_LEFT]: { ...initialToothState },
@@ -174,11 +175,8 @@ export default function EvaluationPage() {
   };
 
   const handleQuickMoulting = (stage: MoultingStage) => {
-      // 1. Definição da Regra de Negócio (Quem é permanente em cada fase)
-      // Essa lógica garante que os dados estejam cientificamente corretos antes de salvar
       const checkIsPermanent = (code: string) => {
           const prefix = code.split('_')[0]; 
-          
           switch (prefix) {
               case 'I1': return [MoultingStage.D2, MoultingStage.D4, MoultingStage.D6, MoultingStage.BC].includes(stage);
               case 'I2': return [MoultingStage.D4, MoultingStage.D6, MoultingStage.BC].includes(stage);
@@ -188,27 +186,20 @@ export default function EvaluationPage() {
           }
       };
 
-      // 2. Atualização do Estado de Dados (A "Verdade" do React)
-      // Isso não é apenas visual; estamos a alterar o objeto que será enviado para o banco.
       setTeethData(prev => {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const nextTeethData: any = { ...prev };
-          
           Object.keys(nextTeethData).forEach((toothCode) => {
               const isPermanent = checkIsPermanent(toothCode);
-              
-              // Preservamos anotações existentes (como fraturas), mudando apenas o tipo do dente
               nextTeethData[toothCode] = {
                   ...nextTeethData[toothCode],
                   toothType: isPermanent ? ToothType.PERMANENT : ToothType.DECIDUOUS,
-                  isPresent: true // Garante que o dente não fique como "Ausente" ao aplicar a muda
+                  isPresent: true
               };
           });
-          
           return nextTeethData;
       });
 
-      // 3. Feedback para o Usuário
       setFeedback({ 
           open: true, 
           message: `Padrão de muda ${stage} aplicado ao formulário. Clique em "Finalizar" para salvar.`, 
@@ -255,15 +246,14 @@ export default function EvaluationPage() {
     };
 
   const getToothLabel = (code: string) => code.replace('_', ' '); 
+  
   const getMediaUrl = (item: AnimalMedia) => {
       if (typeof item === 'string') return item;
-      
-      // Tenta o S3. Se for vazio ou nulo, tenta o Drive. Se não tiver nada, retorna null.
       if (item.s3UrlPath && item.s3UrlPath !== '') return item.s3UrlPath;
       if (item.originalDriveUrl && item.originalDriveUrl !== '') return item.originalDriveUrl;
-      
-      return null; // Retorna null para o React não renderizar src=""
+      return null;
     };
+    
   // --- COMPONENTES VISUAIS ---
 
   const SeveritySelector = ({ label, value, onChange }: { label: string, value: number, onChange: (v: number) => void }) => (
@@ -279,13 +269,13 @@ export default function EvaluationPage() {
         size="small"
       >
         <ToggleButton value={SeverityScale.NONE} sx={{ '&.Mui-selected': { bgcolor: '#dcfce7', color: '#166534' } }}>
-           Normal
+            Normal
         </ToggleButton>
         <ToggleButton value={SeverityScale.MODERATE} sx={{ '&.Mui-selected': { bgcolor: '#fef9c3', color: '#854d0e' } }}>
-           Moderado
+            Moderado
         </ToggleButton>
         <ToggleButton value={SeverityScale.SEVERE} sx={{ '&.Mui-selected': { bgcolor: '#fee2e2', color: '#991b1b' } }}>
-           Crítico
+            Crítico
         </ToggleButton>
       </ToggleButtonGroup>
     </Box>
@@ -319,11 +309,13 @@ export default function EvaluationPage() {
   return (
     <Box sx={{ height: 'calc(100vh - 64px)', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
       
-      {/* --- NOVO: Componente de Zoom (Modal) --- */}
+      {/* ALTERAÇÃO 1: Removido 'coordinates' daqui. 
+         O ImageDialog agora serve apenas para Zoom visual.
+      */}
       <ImageDialog 
-        open={!!zoomImage} 
-        onClose={() => setZoomImage(null)} 
-        imageUrl={zoomImage} 
+        open={!!selectedMedia} 
+        onClose={() => setSelectedMedia(null)} 
+        imageUrl={selectedMedia ? getMediaUrl(selectedMedia) : null} 
       />
 
       {/* HEADER */}
@@ -356,49 +348,70 @@ export default function EvaluationPage() {
             </Typography>
             <Stack spacing={3}>
                 {animal.media && animal.media.length > 0 ? (
-                    animal.media.map((mediaItem, index) => (
-                        <Card key={index} elevation={3}>
-                            {/* --- MUDANÇA AQUI: Box clicável --- */}
-                            <Box 
-                                onClick={() => {
-                                    const url = getMediaUrl(mediaItem);
-                                    if (url) setZoomImage(url);
-                                }}
-                                sx={{ 
-                                    position: 'relative', 
-                                    bgcolor: '#000', 
-                                    minHeight: 300, 
-                                    display: 'flex', 
-                                    alignItems: 'center', 
-                                    justifyContent: 'center',
-                                    cursor: 'pointer', // Cursor de mãozinha
-                                    '&:hover .zoom-icon': { opacity: 1 }, // Efeito hover
-                                    '&:hover': { opacity: 0.95 }
-                                }}
-                            >
-    
-                                {/* LÓGICA DE PROTEÇÃO */}
-                                {getMediaUrl(mediaItem) ? (
-                                    <img 
-                                        src={getMediaUrl(mediaItem) as string} 
-                                        alt={`Evidência ${index + 1}`} 
-                                        style={{ width: '100%', maxHeight: '500px', objectFit: 'contain' }} 
-                                    />
-                                ) : (
-                                    <Typography variant="caption" color="white">
-                                        Imagem indisponível
-                                    </Typography>
-                                )}
+                    animal.media.map((mediaItem, index) => {
+                        const hasLocation = typeof mediaItem !== 'string' && mediaItem.latitude && mediaItem.longitude;
+                        const mapsLink = hasLocation 
+                          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                          // @ts-ignore
+                          ? `https://www.google.com/maps/search/?api=1&query=${mediaItem.latitude},${mediaItem.longitude}`
+                          : '#';
 
-                                <Chip label={index === 0 ? "Frontal" : "Lateral / Lingual"} size="small" sx={{ position: 'absolute', top: 10, left: 10, bgcolor: 'rgba(255,255,255,0.9)' }} />
-                                
-                                {/* Ícone de Zoom Overlay */}
-                                <Box className="zoom-icon" sx={{ position: 'absolute', opacity: 0, transition: '0.3s', bgcolor: 'rgba(0,0,0,0.6)', p: 1, borderRadius: '50%', color: 'white' }}>
-                                    <ZoomIn fontSize="large" />
+                        return (
+                            <Card key={index} elevation={3}>
+                                <Box 
+                                    onClick={() => setSelectedMedia(mediaItem)}
+                                    sx={{ 
+                                        position: 'relative', 
+                                        bgcolor: '#000', 
+                                        minHeight: 300, 
+                                        display: 'flex', 
+                                        alignItems: 'center', 
+                                        justifyContent: 'center',
+                                        cursor: 'pointer',
+                                        '&:hover .zoom-icon': { opacity: 1 }, 
+                                        '&:hover': { opacity: 0.95 }
+                                    }}
+                                >
+        
+                                    {getMediaUrl(mediaItem) ? (
+                                        <img 
+                                            src={getMediaUrl(mediaItem) as string} 
+                                            alt={`Evidência ${index + 1}`} 
+                                            style={{ width: '100%', maxHeight: '500px', objectFit: 'contain' }} 
+                                        />
+                                    ) : (
+                                        <Typography variant="caption" color="white">
+                                            Imagem indisponível
+                                        </Typography>
+                                    )}
+
+                                    <Chip label={index === 0 ? "Frontal" : "Lateral / Lingual"} size="small" sx={{ position: 'absolute', top: 10, left: 10, bgcolor: 'rgba(255,255,255,0.9)' }} />
+                                    
+                                    <Box className="zoom-icon" sx={{ position: 'absolute', opacity: 0, transition: '0.3s', bgcolor: 'rgba(0,0,0,0.6)', p: 1, borderRadius: '50%', color: 'white' }}>
+                                        <ZoomIn fontSize="large" />
+                                    </Box>
                                 </Box>
-                            </Box>
-                        </Card>
-                    ))
+
+                                {/* ALTERAÇÃO 2: Botão de Localização diretamente abaixo da imagem
+                                */}
+                                {hasLocation && (
+                                    <Box p={1} bgcolor="#f8fafc" borderTop="1px solid #e2e8f0">
+                                        <Button 
+                                            fullWidth
+                                            size="small"
+                                            startIcon={<MapIcon />}
+                                            href={mapsLink}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            sx={{ textTransform: 'none', color: 'text.secondary', justifyContent: 'center' }}
+                                        >
+                                            Ver localização da captura
+                                        </Button>
+                                    </Box>
+                                )}
+                            </Card>
+                        );
+                    })
                 ) : (
                     <Box height={200} display="flex" alignItems="center" justifyContent="center" bgcolor="#e0e0e0" borderRadius={2}><Typography color="text.secondary">Sem imagens</Typography></Box>
                 )}
@@ -410,14 +423,12 @@ export default function EvaluationPage() {
                     </Typography>
                     
                     <Stack spacing={1.5}>
-                        {/* 1. ID VISUAL (BRINCO) */}
                         <Box display="flex" justifyContent="space-between">
                             <Typography color="text.secondary">ID Visual (Brinco)</Typography>
                             <Typography fontWeight="bold" variant="body1">{animal.code}</Typography>
                         </Box>
                         <Divider />
 
-                        {/* 2. SISBOV */}
                         <Box display="flex" justifyContent="space-between">
                             <Typography color="text.secondary">SISBOV</Typography>
                             <Typography fontWeight="bold" sx={{ fontFamily: 'monospace', color: animal.sisbovNumber ? 'inherit' : 'text.disabled' }}>
@@ -426,7 +437,6 @@ export default function EvaluationPage() {
                         </Box>
                         <Divider />
 
-                        {/* 3. CHIP  */}
                         <Box display="flex" justifyContent="space-between">
                             <Typography color="text.secondary">Chip Eletrônico</Typography>
                             <Typography fontWeight="bold" sx={{ fontFamily: 'monospace', color: animal.chip ? 'inherit' : 'text.disabled' }}>
@@ -435,28 +445,24 @@ export default function EvaluationPage() {
                         </Box>
                         <Divider />
                         
-                        {/* 4. RAÇA */}
                         <Box display="flex" justifyContent="space-between">
                             <Typography color="text.secondary">Raça</Typography>
                             <Typography fontWeight="bold">{animal.breed}</Typography>
                         </Box>
                         <Divider />
 
-                        {/* NOVO: CATEGORIA */}
                         <Box display="flex" justifyContent="space-between">
                             <Typography color="text.secondary">Categoria</Typography>
                             <Typography fontWeight="bold">{animal.category || '---'}</Typography>
                         </Box>
                         <Divider />
 
-                        {/* NOVO: PELAGEM */}
                         <Box display="flex" justifyContent="space-between">
                             <Typography color="text.secondary">Pelagem</Typography>
                             <Typography fontWeight="bold">{animal.coatColor || '---'}</Typography>
                         </Box>
                         <Divider />
 
-                        {/* 5. PESO ATUAL */}
                         <Box display="flex" justifyContent="space-between" alignItems="center">
                             <Typography color="text.secondary">Peso Atual</Typography>
                             {animal.currentWeight ? (
@@ -467,7 +473,6 @@ export default function EvaluationPage() {
                         </Box>
                         <Divider />
 
-                        {/* NOVO: SCORE CORPORAL */}
                         <Box display="flex" justifyContent="space-between" alignItems="center">
                             <Typography color="text.secondary">Score Corporal</Typography>
                             {animal.bodyScore ? (
@@ -478,14 +483,12 @@ export default function EvaluationPage() {
                         </Box>
                         <Divider />
 
-                        {/* 6. IDADE CALCULADA */}
                         <Box display="flex" justifyContent="space-between">
                             <Typography color="text.secondary">Idade (Calc.)</Typography>
                             <Typography fontWeight="bold">{animal.age ? `${animal.age} meses` : 'N/A'}</Typography>
                         </Box>
                         <Divider />
                         
-                        {/* NOVO: DATA DE ENTRADA */}
                         <Box display="flex" justifyContent="space-between">
                             <Typography color="text.secondary">Data Entrada</Typography>
                             <Typography fontWeight="bold">
@@ -494,7 +497,9 @@ export default function EvaluationPage() {
                         </Box>
                         <Divider />
 
-                        {/* 7. LOCALIZAÇÃO E MAPAS */}
+                        {/* ALTERAÇÃO 3: Removido botão de mapa desta seção.
+                            Mantido apenas texto da Fazenda/Lote.
+                        */}
                         <Box display="flex" justifyContent="space-between" alignItems="center">
                             <Typography color="text.secondary" display="flex" gap={0.5}>
                                 <LocationOn fontSize="small"/> Localização
@@ -502,24 +507,9 @@ export default function EvaluationPage() {
                             
                             <Box textAlign="right">
                                 <Typography fontWeight="bold" variant="body2">{animal.farm || 'Não inf.'}</Typography>
-                                {/* LOTE  */}
                                 <Typography variant="caption" display="block" color={animal.lot ? 'text.secondary' : 'text.disabled'}>
                                    Lote: {animal.lot || '---'}
                                 </Typography>
-                                
-                                {/* Link do Mapa Corrigido */}
-                                {animal.coordinates && (
-                                  <Button 
-                                    size="small" 
-                                    startIcon={<OpenInNew sx={{ fontSize: 14 }} />}
-                                    href={`https://www.google.com/maps?q=${animal.coordinates.lat},${animal.coordinates.lng}`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    sx={{ mt: 0.5, textTransform: 'none', fontSize: '0.75rem', p: 0 }}
-                                  >
-                                    Ver no Mapa
-                                  </Button>
-                                )}
                             </Box>
                         </Box>
 
@@ -545,7 +535,7 @@ export default function EvaluationPage() {
             </Stack>
         </Grid>
 
-        {/* DIREITA */}
+        {/* DIREITA - ODONTOGRAMA (Inalterado nesta versão) */}
         <Grid size={{ xs: 12, md: 7, lg: 8 }} sx={{ height: '100%', overflowY: 'auto', p: 4, bgcolor: '#fff' }}>
             <Container maxWidth="md">
                 
@@ -584,88 +574,88 @@ export default function EvaluationPage() {
 
                                 {currentToothData?.isPresent ? (
                                     <Stack spacing={4}>
-                                            <Box bgcolor="#f8fafc" p={2} borderRadius={2} border="1px solid #e2e8f0">
-                                                <Typography variant="caption" fontWeight="bold" color="text.secondary" gutterBottom display="block">ESTÁGIO DE DESENVOLVIMENTO</Typography>
-                                                <ToggleButtonGroup
-                                                    value={currentToothData.toothType}
-                                                    exclusive
-                                                    onChange={(_, val) => val && updateTooth('toothType', val)}
-                                                    fullWidth
-                                                    size="small"
-                                                    color="primary"
-                                                >
-                                                    <ToggleButton value={ToothType.DECIDUOUS}>🦷 Dente de Leite</ToggleButton>
-                                                    <ToggleButton value={ToothType.PERMANENT}>🦷 Permanente</ToggleButton>
-                                                </ToggleButtonGroup>
-                                            </Box>
+                                                  <Box bgcolor="#f8fafc" p={2} borderRadius={2} border="1px solid #e2e8f0">
+                                                      <Typography variant="caption" fontWeight="bold" color="text.secondary" gutterBottom display="block">ESTÁGIO DE DESENVOLVIMENTO</Typography>
+                                                      <ToggleButtonGroup
+                                                          value={currentToothData.toothType}
+                                                          exclusive
+                                                          onChange={(_, val) => val && updateTooth('toothType', val)}
+                                                          fullWidth
+                                                          size="small"
+                                                          color="primary"
+                                                      >
+                                                          <ToggleButton value={ToothType.DECIDUOUS}>🦷 Dente de Leite</ToggleButton>
+                                                          <ToggleButton value={ToothType.PERMANENT}>🦷 Permanente</ToggleButton>
+                                                      </ToggleButtonGroup>
+                                                  </Box>
 
-                                            <Box>
-                                                <Box display="flex" alignItems="center" gap={1} mb={2}>
-                                                    <Avatar sx={{ bgcolor: 'error.light', width: 24, height: 24, fontSize: 12 }}>!</Avatar>
-                                                    <Typography variant="subtitle1" fontWeight="bold" color="error.main">Parâmetros Críticos</Typography>
-                                                </Box>
-                                                <Grid container spacing={3}>
-                                                    <Grid size={{ xs: 12, sm: 6 }}>
-                                                        <SeveritySelector label="Fratura" value={currentToothData.fractureLevel} onChange={(v) => updateTooth('fractureLevel', v)} />
-                                                    </Grid>
-                                                    <Grid size={{ xs: 12, sm: 6 }}>
-                                                        <SeveritySelector label="Pulpite (Inflamação)" value={currentToothData.pulpitis} onChange={(v) => updateTooth('pulpitis', v)} />
-                                                    </Grid>
-                                                    <Grid size={{ xs: 12, sm: 6 }}>
-                                                        <SeveritySelector label="Recessão Gengival (Raiz)" value={currentToothData.gingivalRecessionLevel} onChange={(v) => updateTooth('gingivalRecessionLevel', v)} />
-                                                    </Grid>
-                                                    <Grid size={{ xs: 12, sm: 6 }}>
-                                                        <SeveritySelector label="Redução de Coroa" value={currentToothData.crownReductionLevel} onChange={(v) => updateTooth('crownReductionLevel', v)} />
-                                                    </Grid>
-                                                </Grid>
-                                            </Box>
+                                                  <Box>
+                                                      <Box display="flex" alignItems="center" gap={1} mb={2}>
+                                                          <Avatar sx={{ bgcolor: 'error.light', width: 24, height: 24, fontSize: 12 }}>!</Avatar>
+                                                          <Typography variant="subtitle1" fontWeight="bold" color="error.main">Parâmetros Críticos</Typography>
+                                                      </Box>
+                                                      <Grid container spacing={3}>
+                                                          <Grid size={{ xs: 12, sm: 6 }}>
+                                                              <SeveritySelector label="Fratura" value={currentToothData.fractureLevel} onChange={(v) => updateTooth('fractureLevel', v)} />
+                                                          </Grid>
+                                                          <Grid size={{ xs: 12, sm: 6 }}>
+                                                              <SeveritySelector label="Pulpite (Inflamação)" value={currentToothData.pulpitis} onChange={(v) => updateTooth('pulpitis', v)} />
+                                                          </Grid>
+                                                          <Grid size={{ xs: 12, sm: 6 }}>
+                                                              <SeveritySelector label="Recessão Gengival (Raiz)" value={currentToothData.gingivalRecessionLevel} onChange={(v) => updateTooth('gingivalRecessionLevel', v)} />
+                                                          </Grid>
+                                                          <Grid size={{ xs: 12, sm: 6 }}>
+                                                              <SeveritySelector label="Redução de Coroa" value={currentToothData.crownReductionLevel} onChange={(v) => updateTooth('crownReductionLevel', v)} />
+                                                          </Grid>
+                                                      </Grid>
+                                                  </Box>
 
-                                            <Divider />
+                                                  <Divider />
 
-                                            <Box>
-                                                <Box display="flex" alignItems="center" gap={1} mb={2}>
-                                                    <Avatar sx={{ bgcolor: 'primary.light', width: 24, height: 24, fontSize: 12 }}>2</Avatar>
-                                                    <Typography variant="subtitle1" fontWeight="bold">Outros Indicadores</Typography>
-                                                </Box>
-                                                <Grid container spacing={3}>
-                                                    <Grid size={{ xs: 12, sm: 6 }}>
-                                                        <SeveritySelector label="Desgaste Lingual" value={currentToothData.lingualWear} onChange={(v) => updateTooth('lingualWear', v)} />
-                                                    </Grid>
-                                                    <Grid size={{ xs: 12, sm: 6 }}>
-                                                        <SeveritySelector label="Lesões Periodontais" value={currentToothData.periodontalLesions} onChange={(v) => updateTooth('periodontalLesions', v)} />
-                                                    </Grid>
-                                                    <Grid size={{ xs: 12, sm: 6 }}>
-                                                        <SeveritySelector label="Cálculo Dentário" value={currentToothData.dentalCalculus} onChange={(v) => updateTooth('dentalCalculus', v)} />
-                                                    </Grid>
-                                                    <Grid size={{ xs: 12, sm: 6 }}>
-                                                        <SeveritySelector label="Cárie" value={currentToothData.caries} onChange={(v) => updateTooth('caries', v)} />
-                                                    </Grid>
-                                                    
-                                                    <Grid size={{ xs: 12, sm: 6 }}>
-                                                        <ColorSelector label="Cor da Gengiva" value={currentToothData.gingivitisColor} onChange={(v) => updateTooth('gingivitisColor', v)} />
-                                                    </Grid>
-                                                    <Grid size={{ xs: 12, sm: 6 }}>
-                                                        <ColorSelector label="Cor do Dente" value={currentToothData.abnormalColor} onChange={(v) => updateTooth('abnormalColor', v)} />
-                                                    </Grid>
-                                                </Grid>
-                                            </Box>
+                                                  <Box>
+                                                      <Box display="flex" alignItems="center" gap={1} mb={2}>
+                                                          <Avatar sx={{ bgcolor: 'primary.light', width: 24, height: 24, fontSize: 12 }}>2</Avatar>
+                                                          <Typography variant="subtitle1" fontWeight="bold">Outros Indicadores</Typography>
+                                                      </Box>
+                                                      <Grid container spacing={3}>
+                                                          <Grid size={{ xs: 12, sm: 6 }}>
+                                                              <SeveritySelector label="Desgaste Lingual" value={currentToothData.lingualWear} onChange={(v) => updateTooth('lingualWear', v)} />
+                                                          </Grid>
+                                                          <Grid size={{ xs: 12, sm: 6 }}>
+                                                              <SeveritySelector label="Lesões Periodontais" value={currentToothData.periodontalLesions} onChange={(v) => updateTooth('periodontalLesions', v)} />
+                                                          </Grid>
+                                                          <Grid size={{ xs: 12, sm: 6 }}>
+                                                              <SeveritySelector label="Cálculo Dentário" value={currentToothData.dentalCalculus} onChange={(v) => updateTooth('dentalCalculus', v)} />
+                                                          </Grid>
+                                                          <Grid size={{ xs: 12, sm: 6 }}>
+                                                              <SeveritySelector label="Cárie" value={currentToothData.caries} onChange={(v) => updateTooth('caries', v)} />
+                                                          </Grid>
+                                                          
+                                                          <Grid size={{ xs: 12, sm: 6 }}>
+                                                              <ColorSelector label="Cor da Gengiva" value={currentToothData.gingivitisColor} onChange={(v) => updateTooth('gingivitisColor', v)} />
+                                                          </Grid>
+                                                          <Grid size={{ xs: 12, sm: 6 }}>
+                                                              <ColorSelector label="Cor do Dente" value={currentToothData.abnormalColor} onChange={(v) => updateTooth('abnormalColor', v)} />
+                                                          </Grid>
+                                                      </Grid>
+                                                  </Box>
 
-                                            <Box bgcolor="#f9fafb" p={2} borderRadius={2}>
-                                                <Typography variant="caption" color="text.secondary" display="block" mb={2}>DETALHES ESPECÍFICOS </Typography>
-                                                <Grid container spacing={2}>
-                                                    <Grid size={{ xs: 6 }}>
-                                                        <SeveritySelector label="Bordo Vitrificado" value={currentToothData.vitrifiedBorder} onChange={(v) => updateTooth('vitrifiedBorder', v)} />
-                                                    </Grid>
-                                                    <Grid size={{ xs: 6 }}>
-                                                         <SeveritySelector label="Exp. Câmara Pulpar" value={currentToothData.pulpChamberExposure} onChange={(v) => updateTooth('pulpChamberExposure', v)} />
-                                                    </Grid>
-                                                    <Grid size={{ xs: 12 }}>
-                                                         <SeveritySelector label="Edema Gengival" value={currentToothData.gingivitisEdema} onChange={(v) => updateTooth('gingivitisEdema', v)} />
-                                                    </Grid>
-                                                </Grid>
-                                            </Box>
+                                                  <Box bgcolor="#f9fafb" p={2} borderRadius={2}>
+                                                      <Typography variant="caption" color="text.secondary" display="block" mb={2}>DETALHES ESPECÍFICOS </Typography>
+                                                      <Grid container spacing={2}>
+                                                          <Grid size={{ xs: 6 }}>
+                                                              <SeveritySelector label="Bordo Vitrificado" value={currentToothData.vitrifiedBorder} onChange={(v) => updateTooth('vitrifiedBorder', v)} />
+                                                          </Grid>
+                                                          <Grid size={{ xs: 6 }}>
+                                                               <SeveritySelector label="Exp. Câmara Pulpar" value={currentToothData.pulpChamberExposure} onChange={(v) => updateTooth('pulpChamberExposure', v)} />
+                                                          </Grid>
+                                                          <Grid size={{ xs: 12 }}>
+                                                               <SeveritySelector label="Edema Gengival" value={currentToothData.gingivitisEdema} onChange={(v) => updateTooth('gingivitisEdema', v)} />
+                                                          </Grid>
+                                                      </Grid>
+                                                  </Box>
 
-                                    </Stack>
+                                      </Stack>
                                 ) : (
                                     <Alert severity="warning" icon={<Warning />}>Este dente foi marcado como <strong>AUSENTE</strong>.</Alert>
                                 )}
