@@ -156,7 +156,7 @@ export class EvaluationService {
     }
   }
 
-  // --- 2. PENDENTES (CORRIGIDO) ---
+  // --- 2. PENDENTES  ---
   async findPendingEvaluations(
       page: number = 1, limit: number = 20, 
       search?: string, filterFarm?: string, filterClient?: string
@@ -190,9 +190,7 @@ export class EvaluationService {
             lot: a.lot,
             birthDate: a.birthDate ? new Date(a.birthDate).toLocaleDateString('pt-BR') : undefined,
             entryDate: a.collectionDate ? new Date(a.collectionDate).toLocaleDateString('pt-BR') : 'N/A',
-            // --- AQUI ESTAVA FALTANDO ---
             createdAt: a.createdAt, 
-            // ---------------------------
             media: a.mediaFiles?.map(m => m.s3UrlPath) || []
           })),
           meta: { total, page, limit, lastPage: Math.ceil(total / limit) }
@@ -408,12 +406,11 @@ export class EvaluationService {
     };
   }
 
- // --- 9. UPLOAD ANIMAL (ATUALIZADO PARA DADOS REAIS) ---
+ // --- 9. UPLOAD ANIMAL  ---
   async createAnimalFromUpload(
     code: string, breed: string, mediaPaths: string[],
     details?: { 
         farm?: string; client?: string; location?: string; collectionDate?: Date; age?: number;
-        // Novos campos aceitos
         chip?: string; sisbovNumber?: string; currentWeight?: number; lot?: string; 
         bodyScore?: number; coatColor?: string;
     }
@@ -423,7 +420,6 @@ export class EvaluationService {
     await queryRunner.startTransaction();
 
     try {
-      // Mapeamento completo dos dados externos para a Entidade Animal
       const animalPayload: DeepPartial<Animal> = {
         tagCode: code, 
         breed: breed, 
@@ -461,28 +457,25 @@ export class EvaluationService {
     }
   }
 
-  // --- 10. SEED PROFISSIONAL (Simula API Externa) ---
+  // --- 10. SEED (Simula API Externa) ---
   async seed() {
     const farms = ['Faz. Animaltools', 'Fazenda Santa Fé', 'Agropecuária Boi Gordo'];
     const lots = ['Baia 12', 'Piquet 4', 'Confinamento A', 'Lote Engorda 03'];
     const breeds = ['Nelore', 'Angus', 'Brahman', 'Senepol'];
     const coatColors = ['Branca', 'Preta', 'Vermelha', 'Mestiça'];
     
-    // Gera 3 animais com dados ricos
     for (let i = 0; i < 3; i++) {
         const randomNum = Math.floor(Math.random() * 9000) + 1000;
-        const tag = `${randomNum}${Math.random() > 0.5 ? 'G' : 'F'}`; // Ex: 1010G
+        const tag = `${randomNum}${Math.random() > 0.5 ? 'G' : 'F'}`; 
         
         const breed = breeds[Math.floor(Math.random() * breeds.length)];
         const farm = farms[Math.floor(Math.random() * farms.length)];
         const lot = lots[Math.floor(Math.random() * lots.length)];
         const color = coatColors[Math.floor(Math.random() * coatColors.length)];
         
-        // Gera dados numéricos
-        const weight = 200 + Math.floor(Math.random() * 400); // 200 a 600kg
-        const score = (Math.random() * (5 - 1) + 1).toFixed(1); // Score 1.0 a 5.0
+        const weight = 200 + Math.floor(Math.random() * 400);
+        const score = (Math.random() * (5 - 1) + 1).toFixed(1);
         
-        // Gera strings de 15 dígitos para Chip e Sisbov
         const chip = Math.floor(Math.random() * 1000000000000000).toString();
         const sisbov = Math.floor(Math.random() * 1000000000000000).toString();
 
@@ -493,10 +486,10 @@ export class EvaluationService {
             { 
                 farm: farm, 
                 client: 'Cliente API Teste', 
-                location: lot.split(' ')[0], // Ex: "Baia"
-                lot: lot, // Ex: "Baia 12"
+                location: lot.split(' ')[0], 
+                lot: lot, 
                 collectionDate: new Date(), 
-                age: 18 + Math.floor(Math.random() * 36), // 18 a 54 meses
+                age: 18 + Math.floor(Math.random() * 36), 
                 chip: chip,
                 sisbovNumber: sisbov,
                 currentWeight: weight + 0.5,
@@ -603,13 +596,12 @@ export class EvaluationService {
     const safeStats = stats || {}; 
     const totalLesions = Object.values(safeStats).reduce((acc: number, val) => acc + Number(val || 0), 0) as number;
 
-    // --- 4. NOVO: TOP 5 ANIMAIS CRÍTICOS ---
+    // --- 4. TOP 5 ANIMAIS CRÍTICOS ---
     const criticalAnimalsQuery = this.evaluationRepository.createQueryBuilder('evaluation')
         .leftJoinAndSelect('evaluation.animal', 'animal')
         .leftJoinAndSelect('evaluation.teeth', 'tooth')
         .where('1=1'); 
 
-    // (Os teus filtros de fazenda/cliente/data continuam iguais aqui...)
     if (filterFarm && filterFarm !== 'all') criticalAnimalsQuery.andWhere('animal.farm ILIKE :farm', { farm: `%${filterFarm}%` });
     if (filterClient && filterClient !== 'all') criticalAnimalsQuery.andWhere('animal.client ILIKE :client', { client: `%${filterClient}%` });
     if (startDate && endDate) {
@@ -618,22 +610,18 @@ export class EvaluationService {
         criticalAnimalsQuery.andWhere('evaluation.evaluationDate BETWEEN :start AND :end', { start, end });
     }
 
-    // Filtra apenas os que têm problemas graves (Aqui podes usar snake_case porque é uma string SQL bruta)
     criticalAnimalsQuery.andWhere(
         '(tooth.fracture_level >= 2 OR tooth.pulpitis >= 2 OR tooth.pulp_chamber_exposure > 0 OR tooth.periodontal_lesions >= 3)'
     );
 
-    // CORREÇÃO AQUI: Usar CamelCase (nomes das propriedades da Entidade)
     const topCritical = await criticalAnimalsQuery
-        .orderBy('tooth.fractureLevel', 'DESC')       // Antes: fracture_level (ERRADO)
-        .addOrderBy('tooth.pulpitis', 'DESC')         // Igual
-        .addOrderBy('tooth.pulpChamberExposure', 'DESC') // Antes: pulp_chamber_exposure (ERRADO)
+        .orderBy('tooth.fractureLevel', 'DESC')     
+        .addOrderBy('tooth.pulpitis', 'DESC')         
+        .addOrderBy('tooth.pulpChamberExposure', 'DESC') 
         .take(5)
         .getMany();
 
-    // Formata o resultado para o Frontend
     const criticalList = topCritical.map(ev => {
-        // Encontra o dente com a pior condição para exibir como "Diagnóstico Principal"
         const badTooth = ev.teeth.find(t => 
             t.fractureLevel >= 2 || t.pulpitis >= 2 || t.pulpChamberExposure > 0 || t.periodontalLesions >= 3
         );
@@ -652,7 +640,7 @@ export class EvaluationService {
             farm: ev.animal.farm,
             location: ev.animal.location || 'N/I',
             diagnosis: mainIssue,
-            date: ev.evaluationDate // ou ev.date dependendo da tua entidade
+            date: ev.evaluationDate 
         };
     });
 

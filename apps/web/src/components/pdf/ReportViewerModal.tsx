@@ -3,7 +3,6 @@ import { Dialog, Box, CircularProgress, Typography, IconButton } from '@mui/mate
 import { Close } from '@mui/icons-material';
 import { PDFViewer } from '@react-pdf/renderer';
 import { EvaluationService } from '../../services/api';
-// Importamos a interface e o componente do arquivo do PDF
 import { DentalReportDoc, ReportData } from './DentalReportDoc';
 
 interface Props {
@@ -13,7 +12,6 @@ interface Props {
 }
 
 export default function ReportViewerModal({ open, onClose, evaluationId }: Props) {
-    // Agora o useState usa a interface correta que exportamos do outro arquivo
     const [data, setData] = useState<ReportData | null>(null);
     const [loading, setLoading] = useState(false);
 
@@ -29,8 +27,6 @@ export default function ReportViewerModal({ open, onClose, evaluationId }: Props
                 const res = await EvaluationService.getOne(evaluationId);
                 
                 if (isMounted) {
-                    // O Backend já manda os dados. 
-                    // O TypeScript vai garantir que o que chegou bate com a interface ReportData
                     setData(res.data);
                 }
             } catch (err) {

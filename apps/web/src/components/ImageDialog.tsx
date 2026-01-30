@@ -16,7 +16,6 @@ interface ImageDialogProps {
   onClose: () => void;
   imageUrl: string | null;
   altText?: string;
-  // Coordenadas passadas do componente pai
   coordinates?: { lat: string | number, lng: string | number } | null;
 }
 
@@ -51,7 +50,7 @@ export function ImageDialog({ open, onClose, imageUrl, altText = 'Imagem ampliad
       {/* Header com Botão Fechar e Título Opcional */}
       <Box sx={{ position: 'absolute', top: 8, right: 8, zIndex: 999, display: 'flex', gap: 1 }}>
         
-        {/* Botão de Mapa (Visível no topo se preferir, ou mantemos apenas embaixo) */}
+        {/* Botão de Mapa  */}
         {hasLocation && (
              <Tooltip title="Abrir localização no Google Maps">
                 <IconButton 
@@ -89,7 +88,7 @@ export function ImageDialog({ open, onClose, imageUrl, altText = 'Imagem ampliad
         />
       </DialogContent>
 
-      {/* Barra Inferior com Informações de GPS (Opcional, mas muito útil) */}
+      {/* Barra Inferior com Informações de GPS  */}
       {hasLocation && (
           <Box sx={{ 
               position: 'absolute', 

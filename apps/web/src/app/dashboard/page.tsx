@@ -138,7 +138,7 @@ export default function DashboardPage() {
         </Box>
 
         <Stack direction="row" spacing={2} alignItems="center">
-            {/* --- NOVO BOTÃO DE SYNC --- */}
+            {/* --- BOTÃO DE SYNC --- */}
             <Button 
                 variant="contained" 
                 color="primary" 
@@ -147,7 +147,7 @@ export default function DashboardPage() {
                 disabled={syncing}
                 sx={{ height: 40, textTransform: 'none', fontWeight: 'bold' }}
             >
-                {syncing ? 'Sincronizando...' : 'Sincronizar ERP'}
+                {syncing ? 'Sincronizando...' : 'Sincronizar '}
             </Button>
 
             <Chip 

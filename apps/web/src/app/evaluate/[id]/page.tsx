@@ -57,7 +57,7 @@ interface Animal {
   currentWeight?: number;
   lot?: string;
   birthDate?: string;
-  coordinates?: { lat: number; lng: number }; // Mantido no tipo, mas não usado na UI global
+  coordinates?: { lat: number; lng: number }; 
   category?: string;
   coatColor?: string;
   bodyScore?: number;
@@ -309,9 +309,7 @@ export default function EvaluationPage() {
   return (
     <Box sx={{ height: 'calc(100vh - 64px)', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
       
-      {/* ALTERAÇÃO 1: Removido 'coordinates' daqui. 
-         O ImageDialog agora serve apenas para Zoom visual.
-      */}
+    
       <ImageDialog 
         open={!!selectedMedia} 
         onClose={() => setSelectedMedia(null)} 
@@ -392,8 +390,7 @@ export default function EvaluationPage() {
                                     </Box>
                                 </Box>
 
-                                {/* ALTERAÇÃO 2: Botão de Localização diretamente abaixo da imagem
-                                */}
+                                {/* Botão de Localização diretamente abaixo da imagem*/}
                                 {hasLocation && (
                                     <Box p={1} bgcolor="#f8fafc" borderTop="1px solid #e2e8f0">
                                         <Button 
@@ -497,9 +494,7 @@ export default function EvaluationPage() {
                         </Box>
                         <Divider />
 
-                        {/* ALTERAÇÃO 3: Removido botão de mapa desta seção.
-                            Mantido apenas texto da Fazenda/Lote.
-                        */}
+                       
                         <Box display="flex" justifyContent="space-between" alignItems="center">
                             <Typography color="text.secondary" display="flex" gap={0.5}>
                                 <LocationOn fontSize="small"/> Localização
@@ -535,7 +530,7 @@ export default function EvaluationPage() {
             </Stack>
         </Grid>
 
-        {/* DIREITA - ODONTOGRAMA (Inalterado nesta versão) */}
+        {/* DIREITA - ODONTOGRAMA */}
         <Grid size={{ xs: 12, md: 7, lg: 8 }} sx={{ height: '100%', overflowY: 'auto', p: 4, bgcolor: '#fff' }}>
             <Container maxWidth="md">
                 

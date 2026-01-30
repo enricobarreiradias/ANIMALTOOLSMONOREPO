@@ -7,19 +7,18 @@ export class AuditLog {
   id: number;
 
   @Column()
-  action: string; // ex: 'CREATE', 'UPDATE', 'DELETE', 'LOGIN'
+  action: string; 
 
   @Column()
-  entity: string; // ex: 'User', 'Evaluation', 'Animal'
+  entity: string; 
 
   @Column()
-  entityId: string; // ID do item que foi mexido
+  entityId: string; 
 
   @Column({ type: 'text', nullable: true })
-  details: string; // Detalhes extras (ex: "Mudou o cargo para Admin")
+  details: string; 
 
 
-  // Relacionamento com o usuário que fez a ação
   @ManyToOne(() => User, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'user_id' })
   user: User;

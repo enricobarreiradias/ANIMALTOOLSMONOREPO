@@ -50,19 +50,19 @@ export class Animal {
   collectionDate: Date | null;
 
   @Column({ type: 'float', nullable: true, name: 'body_score' })
-  bodyScore: number | null; // Mapeia para "score"
+  bodyScore: number | null; 
 
   @Column({ type: 'varchar', nullable: true, name: 'coat_color' })
-  coatColor: string | null; // Mapeia para "nome_pelagem_id"
+  coatColor: string | null; 
 
   @Column({ type: 'varchar', nullable: true })
-  category: string | null; // Mapeia para "nome_categoria_id"
+  category: string | null; 
 
   @Column({ type: 'varchar', nullable: true })
-  status: string | null; // Mapeia para "status"
+  status: string | null; 
 
   @Column({ type: 'timestamp', nullable: true, name: 'entry_date' })
-  entryDate: Date | null; // Junção de data + hora de entrada
+  entryDate: Date | null; 
 
   // Campos de IDs externos 
   @Column({ type: 'int', nullable: true, name: 'external_category_id' })

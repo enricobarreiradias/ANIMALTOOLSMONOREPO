@@ -36,7 +36,7 @@ interface CreateData {
   [key: string]: unknown;
 }
 
-// --- AUTH SERVICE (ATUALIZADO) ---
+// --- AUTH SERVICE  ---
 export const AuthService = {
   login: (data: { email: string; password: string }) => api.post('/auth/signin', data),
   

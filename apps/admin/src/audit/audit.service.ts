@@ -12,21 +12,20 @@ export class AuditService {
   ) {}
 
   // Grava uma ação
-  async log(action: string, entity: string, entityId: string | number, user: User, details?: string) {
+  async log(action: string, entity: string, entityId: string | number, user: User | null, details?: string) {
     try {
         const newLog = this.auditRepository.create({
             action,
             entity,
             entityId: entityId.toString(),
-            user, // Passamos o objeto User inteiro
+            user: user || undefined, 
             details: details || ''
         });
         await this.auditRepository.save(newLog);
     } catch (e) {
         console.error("Falha ao salvar log de auditoria:", e);
-        // Não jogamos erro para não travar a operação principal do usuário
     }
-  }
+}
 
   // Lista os logs (Apenas os últimos 100 para não pesar)
   async findAll() {

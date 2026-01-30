@@ -28,16 +28,14 @@ export default function Sidebar() {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // 1. Busca os dados reais do usuário ao carregar a Sidebar
+  // 1. Busca os dados do usuário ao carregar a Sidebar
   useEffect(() => {
     AuthService.me()
       .then((response) => {
-        // O backend retorna { user: { ... } }
         setUser(response.data.user);
       })
       .catch((error) => {
         console.error("Falha ao carregar perfil:", error);
-        // Se falhar (token inválido), opcionalmente podes forçar logout
       })
       .finally(() => {
         setLoading(false);
@@ -138,7 +136,7 @@ export default function Sidebar() {
         })}
       </List>
       
-      {/* CARD DO USUÁRIO (Agora Dinâmico) */}
+      {/* CARD DO USUÁRIO */}
       <Box sx={{ mt: 'auto', p: 3 }}>
          <Card variant="outlined" sx={{ bgcolor: '#f8fafc', border: 'none', borderRadius: 3 }}>
             <Box p={2} display="flex" alignItems="center" gap={2}>

@@ -9,7 +9,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffff'
   },
   
-  // Header corporativo
   header: { 
     flexDirection: 'row', 
     justifyContent: 'space-between', 
@@ -38,7 +37,7 @@ const styles = StyleSheet.create({
     marginTop: 4 
   },
 
-  // Títulos de seção profissionais
+  // Títulos de seção 
   sectionTitle: { 
     fontSize: 12, 
     fontWeight: 'bold', 
@@ -52,7 +51,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5
   },
   
-  // KPIs corporativos - minimalistas
+  // KPIs 
   kpiContainer: { 
     flexDirection: 'row', 
     justifyContent: 'space-between', 
@@ -79,7 +78,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5
   },
 
-  // Gráfico de Barras - design corporativo
+  // Gráfico de Barras
   chartRow: { 
     marginBottom: 10 
   },
@@ -109,7 +108,7 @@ const styles = StyleSheet.create({
     height: '100%' 
   },
 
-  // Filtros - design clean
+  // Filtros 
   filtersBox: {
     marginBottom: 24,
     backgroundColor: '#f9fafb',
@@ -124,7 +123,7 @@ const styles = StyleSheet.create({
     lineHeight: 1.4
   },
 
-  // Distribuição de severidade - cards profissionais
+  // Distribuição de severidade 
   severityContainer: {
     flexDirection: 'row',
     gap: 12
@@ -145,7 +144,7 @@ const styles = StyleSheet.create({
     lineHeight: 1.3
   },
 
-  // Tabela de casos críticos - design executivo
+  // Tabela de casos críticos 
   criticalSection: {
     marginTop: 24
   },
@@ -196,7 +195,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold'
   },
 
-  // Footer minimalista
+  // Footer 
   footer: { 
     position: 'absolute', 
     bottom: 30, 
@@ -256,17 +255,16 @@ interface Props {
 export const StatsReportDoc = ({ stats, pathologyList, filters, user }: Props) => {
   const total = stats.general.total || 1;
 
-  // Palette de cores vibrantes e modernas para gráficos
   const getPathologyColor = (index: number) => {
     const colors = [
-      '#3b82f6', // Azul vibrante
-      '#10b981', // Verde esmeralda
-      '#f59e0b', // Laranja âmbar
-      '#ef4444', // Vermelho coral
-      '#8b5cf6', // Roxo vibrante
-      '#ec4899', // Rosa pink
-      '#06b6d4', // Ciano
-      '#f97316', // Laranja intenso
+      '#3b82f6', 
+      '#10b981', 
+      '#f59e0b', 
+      '#ef4444', 
+      '#8b5cf6', 
+      '#ec4899', 
+      '#06b6d4', 
+      '#f97316', 
     ];
     return colors[index % colors.length];
   };
@@ -275,7 +273,7 @@ export const StatsReportDoc = ({ stats, pathologyList, filters, user }: Props) =
     <Document>
       <Page size="A4" style={styles.page}>
         
-        {/* HEADER EXECUTIVO */}
+        {/* HEADER  */}
         <View style={styles.header}>
           <Image src="/logoFull.png" style={styles.logoConfig} />
           <View style={styles.titleBlock}>
@@ -294,7 +292,7 @@ export const StatsReportDoc = ({ stats, pathologyList, filters, user }: Props) =
           </Text>
         </View>
 
-        {/* KPIs CORPORATIVOS */}
+        {/* KPIs  */}
         <View style={styles.kpiContainer}>
           <View style={styles.kpiBox}>
             <Text style={[styles.kpiValue, { color: '#1f2937' }]}>{stats.general.total}</Text>
@@ -408,7 +406,7 @@ export const StatsReportDoc = ({ stats, pathologyList, filters, user }: Props) =
           </View>
         )}
 
-        {/* FOOTER MINIMALISTA */}
+        {/* FOOTER  */}
         <View style={styles.footer}>
           <Text>VirtualVet - Sistema de Gestão de Saúde Animal</Text>
         </View>

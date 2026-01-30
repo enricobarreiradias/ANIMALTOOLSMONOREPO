@@ -11,8 +11,6 @@ const SeverityScale = {
   SEVERE: 2
 };
 
-// 1. Função que calcula a pior nota do dente (olhando todos os critérios)
-
 //eslint-disable-next-line @typescript-eslint/no-explicit-any
 const getToothSeverity = (data: any) => {
   if (!data || !data.isPresent) return SeverityScale.NONE;
@@ -33,9 +31,9 @@ const getToothSeverity = (data: any) => {
 
 // 2. Cores baseadas na nova severidade (0, 1, 2)
 const getSeverityColor = (level: number) => {
-  if (level >= SeverityScale.SEVERE) return '#ef4444'; // Vermelho (Crítico)
-  if (level === SeverityScale.MODERATE) return '#facc15'; // Amarelo (Moderado)
-  return '#e2e8f0'; // Cinza (Saudável)
+  if (level >= SeverityScale.SEVERE) return '#ef4444'; 
+  if (level === SeverityScale.MODERATE) return '#facc15'; 
+  return '#e2e8f0'; 
 };
 
 const ToothButton = styled(Paper)<{ selected?: boolean; severity: number }>(({ theme, selected, severity }) => ({

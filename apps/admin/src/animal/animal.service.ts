@@ -59,7 +59,6 @@ export class AnimalService {
                 entryDate = parsedDate;
             }
         }
-        // ------------------------------------
 
         const mappedData: DeepPartial<Animal> = {
             tagCode: tagCode, 
@@ -93,6 +92,7 @@ export class AnimalService {
         };
 
         let animal: Animal | null = null;
+        let actionType = 'CREATED'; 
 
         // Upsert via SISBOV
         if (mappedData.sisbovNumber) {
@@ -114,8 +114,10 @@ export class AnimalService {
 
         if (animal) {
             Object.assign(animal, mappedData);
+            actionType = 'UPDATED'; 
         } else {
             animal = queryRunner.manager.create(Animal, mappedData);
+            actionType = 'CREATED'; 
         }
 
         const savedAnimal = await queryRunner.manager.save(animal);
@@ -165,8 +167,9 @@ export class AnimalService {
 
         await queryRunner.commitTransaction();
 
+        // Retorna o tipo de ação para contagem
         return { 
-            message: animal ? 'Animal atualizado via integração (SISBOV).' : 'Animal criado via integração.',
+            action: actionType, 
             id: savedAnimal.id,
             tag: savedAnimal.tagCode
         };
@@ -196,6 +199,14 @@ export class AnimalService {
 
     this.logger.log(`🔄 Iniciando sincronização: ${url}`);
 
+    await this.auditService.log(
+        'SYNC_START',
+        'ExternalApi',
+        'SISBOV', 
+        null, // Usuário é null (Ação do Sistema)
+        `Iniciando sincronização do período: ${dtInit} a ${dtEnd}`
+    );
+    
     try {
       const response = await axios.get(url);
       
@@ -206,17 +217,38 @@ export class AnimalService {
         throw new Error('Formato inválido: esperava um array em "data" ou na raiz.');
       }
 
-      let count = 0;
+      // [MUDANÇA] Contadores
+      let countTotal = 0;
+      let countCreated = 0;
+      let countUpdated = 0;
 
       for (const item of externalAnimals) {
-        await this.processWebhook(item);
-        count++;
+        const result = await this.processWebhook(item);
+        
+        countTotal++;
+        if (result.action === 'CREATED') countCreated++;
+        if (result.action === 'UPDATED') countUpdated++;
       }
+
+      // [MUDANÇA] Log detalhado
+      const details = `Sincronização concluída. Total: ${countTotal}. Novos: ${countCreated}. Atualizados: ${countUpdated}.`;
+
+      await this.auditService.log(
+          'SYNC_SUCCESS',
+          'ExternalApi',
+          'SISBOV',
+          null,
+          details
+      );
 
       return { 
           message: `✅ Sincronização concluída!`,
           period: `${dtInit} a ${dtEnd}`,
-          processed: count
+          stats: {
+              total: countTotal,
+              created: countCreated,
+              updated: countUpdated
+          }
       };
 
     } catch (error) {
@@ -228,6 +260,13 @@ export class AnimalService {
                 };
             }
         }
+        await this.auditService.log(
+            'SYNC_ERROR',
+            'ExternalApi',
+            'SISBOV',
+            null,
+            `Falha na sincronização: ${error.message}`
+        );
         throw new HttpException(`Falha na API Externa: ${error.message}`, HttpStatus.BAD_GATEWAY);
     }
   }

@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useCallback } from 'react'; 
 import { useRouter, useSearchParams } from 'next/navigation';
-// 1. Import necessário para carregar o PDF sem erros de servidor
 import dynamic from 'next/dynamic';
 import { 
   Box, Typography, Paper, Table, TableBody, TableCell, 
@@ -19,7 +18,7 @@ import { EvaluationService, AuthService } from '../../services/api';
 
 // 2. Importação Dinâmica do Componente de PDF
 const ReportViewerModal = dynamic(() => import('../../components/pdf/ReportViewerModal'), {
-  ssr: false, // Desabilita renderização no servidor (obrigatório para react-pdf)
+  ssr: false, // Desabilita renderização no servidor 
   loading: () => <p>Carregando módulo de impressão...</p>
 });
 
@@ -61,7 +60,6 @@ export default function HistoryPage() {
   // --- 3. NOVOS ESTADOS PARA O MODAL DE PDF ---
   const [reportOpen, setReportOpen] = useState(false);
   const [reportId, setReportId] = useState<string | null>(null);
-  // --------------------------------------------
 
   const [page, setPage] = useState(0); 
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -135,12 +133,12 @@ export default function HistoryPage() {
       }
   };
 
-  // Opção 2: Mini Relatório (AGORA FUNCIONAL)
+  // Opção 2: Mini Relatório (
   const handleViewReport = () => {
       if (selectedItem) {
-          setReportId(selectedItem.id); // Define qual avaliação mostrar
-          setReportOpen(true);          // Abre o Modal do PDF
-          setViewModalOpen(false);      // Fecha o modal de escolha
+          setReportId(selectedItem.id); 
+          setReportOpen(true);         
+          setViewModalOpen(false);      
       }
   };
 

@@ -19,7 +19,7 @@ interface User {
   registrationDate: string;
 }
 
-// Interface para o usuário logado (pequeno ajuste)
+// Interface para o usuário logado 
 interface CurrentUser {
     id: number;
     email: string;
@@ -31,7 +31,7 @@ export default function UsersPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // --- NOVO: Estado para saber quem está logado ---
+  // --- Estado para saber quem está logado ---
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
 
   const [open, setOpen] = useState(false);
@@ -48,9 +48,8 @@ export default function UsersPage() {
   const fetchUsers = useCallback(() => {
     setLoading(true);
     
-    // 1. Buscamos quem sou eu (para saber qual ID bloquear)
     AuthService.me().then(res => {
-        setCurrentUser(res.data.user); // Ajuste conforme o retorno do seu /me
+        setCurrentUser(res.data.user); 
     }).catch(console.error);
 
     // 2. Buscamos a lista
@@ -61,7 +60,6 @@ export default function UsersPage() {
       })
       .catch((err: unknown) => { 
         console.error(err);
-        setError('Você não tem permissão para ver esta lista ou ocorreu um erro.');
       })
       .finally(() => setLoading(false));
   }, []);
@@ -104,7 +102,6 @@ export default function UsersPage() {
       } catch (err) {
           console.error(err);
           const error = err as AxiosError<{ message: string }>;
-          // Feedback melhor para o usuário caso o backend bloqueie
           alert(error.response?.data?.message || 'Erro ao remover usuário.');
       }
   };
@@ -190,11 +187,9 @@ export default function UsersPage() {
             </TableHead>
             <TableBody>
               {users.map((user) => {
-                // --- LÓGICA DE PROTEÇÃO VISUAL ---
                 const isCurrentUser = currentUser?.id === user.id;
-                const isSuperAdmin = user.id === 1; // ID 1 é sagrado
+                const isSuperAdmin = user.id === 1; 
                 const canDelete = !isSuperAdmin && !isCurrentUser;
-                // ---------------------------------
 
                 return (
                 <TableRow key={user.id} hover>
@@ -257,10 +252,7 @@ export default function UsersPage() {
         )}
       </TableContainer>
 
-      {/* Modal permanece igual... */}
       <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
-         {/* ... (código do modal que você já tem) ... */}
-         {/* Apenas copie o restante do modal igual estava no seu arquivo original */}
          <DialogTitle sx={{ fontWeight: 'bold' }}>
             {editingId ? "Editar Usuário" : "Cadastrar Novo Membro"}
         </DialogTitle>

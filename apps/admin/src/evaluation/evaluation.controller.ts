@@ -25,7 +25,7 @@ export class EvaluationController {
   // --- ROTAS PROTEGIDAS ---
 
   @Post()
-  @UseGuards(AuthGuard('jwt')) // <--- Cadeado aqui
+  @UseGuards(AuthGuard('jwt')) 
   @UsePipes(new ValidationPipe({ transform: true, whitelist: true })) 
   async create(@Body() createEvaluationDto: CreateEvaluationDto, @Req() req: any) { 
     const payload = {

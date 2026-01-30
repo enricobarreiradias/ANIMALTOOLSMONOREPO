@@ -5,7 +5,7 @@ import {
   InternalServerErrorException, 
   NotFoundException, 
   ForbiddenException,
-  Logger // <--- 1. Adicionar Logger para avisos bonitos no terminal
+  Logger 
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -111,7 +111,7 @@ export class AuthService {
     });
   }
 
-  // --- 5. ATUALIZAR (Com Proteção de Super Admin) ---
+  // --- 5. ATUALIZAR (Com Proteção de Admin) ---
   async update(id: number, updateData: { fullName?: string; email?: string; password?: string; role?: UserRole }): Promise<void> {
     const user = await this.userRepository.findOne({ where: { id } });
 
@@ -146,7 +146,7 @@ export class AuthService {
     }
   }
 
-  // --- 6. REMOVER (Com Proteção de Super Admin) ---
+  // --- 6. REMOVER (Com Proteção de Admin) ---
   async remove(id: number): Promise<void> {
     const user = await this.userRepository.findOne({ where: { id } });
 

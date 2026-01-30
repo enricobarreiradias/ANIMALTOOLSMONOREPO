@@ -26,7 +26,7 @@ export enum EvaluationStatus {
 // DTO para cada Dente individual
 export class ToothEvaluationDto {
   @IsString()
-  toothCode: string; // Ex: "I1_LEFT"
+  toothCode: string; 
 
   @IsBoolean()
   isPresent: boolean;
@@ -64,7 +64,7 @@ export class ToothEvaluationDto {
   caries?: number;
 
   // --- CORES (Escala 0 a 1) ---
-  // 0 = Normal, 1 = Alterada [cite: 71]
+  // 0 = Normal, 1 = Alterada 
 
   @IsInt() @Min(0) @Max(1) @IsOptional()
   gingivitisColor?: number;

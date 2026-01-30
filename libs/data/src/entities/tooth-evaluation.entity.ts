@@ -1,6 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
 import { DentalEvaluation } from './dental-evaluation.entity';
-// Importando os novos Enums
 import { SeverityScale, ColorScale, ToothCode, ToothType } from '../enums/dental-evaluation.enums';
 
 @Entity('tooth_evaluation')

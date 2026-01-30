@@ -179,7 +179,7 @@ export default function PendingEvaluationsPage() {
                 </TextField>
             </Grid>
 
-            {/* FILTRO CLIENTE (AGORA DINÂMICO) */}
+            {/* FILTRO CLIENTE */}
             <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                 <FormControl fullWidth size="small">
                     <InputLabel>Filtrar Cliente</InputLabel>
@@ -242,7 +242,7 @@ export default function PendingEvaluationsPage() {
                                                 ? new Date(row.createdAt).toLocaleString('pt-BR', {
                                                     day: '2-digit',
                                                     month: '2-digit',
-                                                    year: '2-digit', // Ano curto (26) economiza espaço
+                                                    year: '2-digit', 
                                                     hour: '2-digit',
                                                     minute: '2-digit'
                                                   }) 

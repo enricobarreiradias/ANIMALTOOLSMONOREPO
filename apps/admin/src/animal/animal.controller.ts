@@ -1,12 +1,12 @@
 import { 
   Controller, Get, Post, Body, Patch, Param, Delete, 
-  UseGuards, Query, DefaultValuePipe, ParseIntPipe, Req // <--- Req Importado
+  UseGuards, Query, DefaultValuePipe, ParseIntPipe, Req 
 } from '@nestjs/common';
 import { AnimalService } from './animal.service';
 import { CreateAnimalDto } from './dto/create-animal.dto';
 import { UpdateAnimalDto } from './dto/update-animal.dto';
 import { AuthGuard } from '@nestjs/passport';
-import { User } from '../../../../libs/data/src/entities/user.entity'; // <--- Import User
+import { User } from '../../../../libs/data/src/entities/user.entity'; 
 
 @Controller('animal')
 export class AnimalController {
@@ -59,24 +59,24 @@ export class AnimalController {
     return this.animalService.findOne(+id);
   }
 
-  // --- UPDATE (Passa o Usuário) ---
+  // --- UPDATE  ---
   @Patch(':id')
   @UseGuards(AuthGuard('jwt'))
   update(
       @Param('id') id: string, 
       @Body() updateAnimalDto: UpdateAnimalDto,
-      @Req() req: any // <--- Request
+      @Req() req: any 
   ) {
     const user = req.user as User;
     return this.animalService.update(+id, updateAnimalDto, user);
   }
 
-  // --- DELETE (Passa o Usuário) ---
+  // --- DELETE  ---
   @Delete(':id')
   @UseGuards(AuthGuard('jwt'))
   remove(
       @Param('id') id: string,
-      @Req() req: any // <--- Request
+      @Req() req: any 
   ) {
     const user = req.user as User;
     return this.animalService.remove(+id, user);

@@ -1,6 +1,6 @@
 import { Page, Text, View, Document, StyleSheet, Image } from '@react-pdf/renderer';
 
-// 1. Interface COMPLETA com todas as patologias e dados da API externa
+// 1. Interface com todas as patologias e dados da API externa
 export interface ToothData {
   toothCode: string;
   fractureLevel: number;
@@ -28,7 +28,6 @@ export interface ReportData {
     age: number;
     client: string;
     farm: string;    
-    // Novos campos da API Externa
     chip?: string;
     sisbovNumber?: string; 
     currentWeight?: number;
